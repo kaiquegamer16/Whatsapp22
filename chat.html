@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--header-bg:#075E54; --bg:#ECE5DD; --fab-bg:#25D366; --font-family:'Roboto',sans-serif; --danger-color: #dc3545; --whatsapp-teal-green:#128C7E; --chat-panel-bg:#F0F0F0; --incoming-bubble-bg:#FFFFFF; --outgoing-bubble-bg:#DCF8C6; --overlay-bg:rgba(0,0,0,0.7);}
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        body{font-family:var(--font-family);background-color:var(--bg);margin:0;}
+        .view { display: none; height: 100vh; flex-direction: column; }
+        .view.active { display: flex; }
+        .header{background-color:var(--header-bg);color:#fff;padding:15px;font-size:1.3rem;box-shadow:0 2px 5px rgba(0,0,0,0.2); flex-shrink: 0;}
+        .group-list{padding:10px 0; overflow-y: auto; flex-grow: 1;}
+        .group-item{display:flex;align-items:center;padding:12px 15px;background-color:#fff;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background-color .2s;}
+        .group-item:hover{background-color:#f5f5f5;}
+        .group-item-info { flex-grow: 1; display: flex; align-items: center; }
+        .group-item img{width:50px;height:50px;border-radius:50%;object-fit:cover;margin-right:15px;background-color:#ccc;}
+        .group-item span{font-size:1.1rem;font-weight:500;}
+        .clear-btn { background: none; border: none; font-size: 1.2rem; color: #aaa; cursor: pointer; padding: 10px; }
+        .clear-btn:hover { color: var(--header-bg); }
+        .fab{position:fixed;bottom:25px;right:25px;width:56px;height:56px;background-color:var(--fab-bg);color:#fff;border-radius:50%;border:none;font-size:1.8rem;display:flex;justify-content:center;align-items:center;box-shadow:0 4px 8px rgba(0,0,0,0.2);cursor:pointer;}
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;justify-content:center;align-items:center;z-index:1000;opacity:0;visibility:hidden;transition: opacity 0.3s;}
+        .overlay.active{opacity:1;visibility:visible;}
+        .modal{background:#fff;padding:25px;border-radius:8px;width:90%;max-width:400px;}
+        .modal h2{margin:0 0 20px;}
+        .modal input[type="text"]{width:calc(100% - 22px);padding:10px;margin-bottom:15px;border:1px solid #ccc;border-radius:5px;}
+        .modal button{width:100%;padding:12px;border:none;border-radius:5px;color:#fff;background-color:var(--header-bg);font-size:1rem;cursor:pointer;}
+        .modal button.secondary{background-color:#aaa;margin-top:10px;}
+        .file-label { display: block; padding: 10px; border: 1px dashed #ccc; border-radius: 5px; text-align: center; cursor: pointer; margin-bottom: 15px; }
+        .file-label img { max-width: 50px; max-height: 50px; display: block; margin: 5px auto; }
+        .chat-container{position:relative;z-index:10;width:100%;max-width:100%;height:100%;background-color:var(--chat-panel-bg);box-shadow:0 4px 12px rgba(0,0,0,0.15);display:flex;flex-direction:column;overflow:hidden;}
+        .chat-header{background-color:var(--whatsapp-teal-green);color:#fff;padding:10px 20px;font-size:1.2rem;display:flex;justify-content:space-between;align-items:center;}
+        .header-main { flex-grow: 1; display: flex; align-items: center; }
+        .back-button { color: #fff; text-decoration: none; margin-right: 15px; font-size: 1.2rem; }
+        #settings-button{background:0 0;border:none;color:#fff;font-size:1.3rem;cursor:pointer;}
+        .messages{flex-grow:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;background-image:url(https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png);}
+        .message{padding:8px 12px;border-radius:8px;margin-bottom:12px;max-width:70%;word-wrap:break-word;box-shadow:0 1px 1px rgba(0,0,0,0.05);position:relative;}
+        .message-author{font-size:.8rem;font-weight:700;color:var(--whatsapp-teal-green);margin-bottom:4px;}
+        .message.sent{background-color:var(--outgoing-bubble-bg);align-self:flex-end;}
+        .message.received{background-color:var(--incoming-bubble-bg);align-self:flex-start;}
+        .message .timestamp{font-size:.7rem;color:#999;float:right;clear:both;margin-top:5px;margin-left:10px;}
+        .message p{margin:0;padding-right:50px;}
+        .message img{max-width:100%;border-radius:8px;margin-top:5px;cursor:pointer;display:block;}
+        .file-attachment{display:flex;align-items:center;background:#f0f0f0;padding:10px;border-radius:5px;margin-top:5px;text-decoration:none;color:#333;}
+        .file-attachment i{font-size:1.5rem;margin-right:10px;color:#555;}
+        .preview-area{padding:10px 15px;background-color:#e9e9e9;display:none;align-items:center;border-bottom:1px solid #ddd;}
+        #preview-content{display:flex;align-items:center;font-size:.9rem;color:#555;}
+        #preview-content img{width:40px;height:40px;object-fit:cover;border-radius:5px;margin-right:10px;}
+        #preview-content i{font-size:1.5rem;margin-right:10px;}
+        #cancel-preview{margin-left:auto;background:0 0;border:none;font-size:1.2rem;cursor:pointer;color:#888;}
+        .input-area{display:flex;align-items:center;padding:10px 15px;background-color:var(--chat-panel-bg);}
+        #messageInput{flex-grow:1;border:1px solid #ccc;border-radius:20px;padding:10px 15px;font-size:1rem;margin:0 10px;}
+        .icon-button{background:0 0;border:none;font-size:1.5rem;cursor:pointer;color:#555;padding:0 10px;}
+        #toast-notification{position:fixed;bottom:-100px;left:50%;transform:translateX(-50%);background-color:#28a745;color:#fff;padding:10px 20px;border-radius:25px;font-size:.9rem;z-index:2000;transition:bottom .5s ease-in-out;}
+        #toast-notification.show{bottom:30px;}
+        .image-viewer{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--overlay-bg);display:flex;justify-content:center;align-items:center;z-index:1001;opacity:0;visibility:hidden;transition:opacity .3s ease;}
+        .image-viewer.active{opacity:1;visibility:visible;}
+        .image-viewer img{max-width:90%;max-height:80%;object-fit:contain;border-radius:5px;box-shadow:0 0 25px rgba(0,0,0,0.5);}
+        .close-viewer{position:absolute;top:20px;right:30px;font-size:2rem;color:#fff;background:0 0;border:none;cursor:pointer;}
+    </style>
+</head>
+<body>
+    <div class="view active" id="groups-view">
+        <div class="header">Grupos</div>
+        <div class="group-list" id="group-list"></div>
+        <button class="fab" id="create-group-btn" title="Criar Novo Grupo">+</button>
+        <div class="overlay" id="group-modal-overlay">
+            <div class="modal">
+                <h2>Novo Grupo</h2>
+                <input type="text" id="group-name-input" placeholder="Nome do Grupo" required>
+                <label class="file-label" id="file-label">
+                    <span id="file-label-text">Imagem de Capa (Opcional)</span>
+                </label>
+                <button id="save-group-btn">Criar Grupo</button>
+                <button id="cancel-group-btn" class="secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="view" id="chat-view">
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="header-main">
+                    <a href="#" id="back-button" class="back-button"><i class="fas fa-arrow-left"></i></a>
+                    <span id="group-name-header"></span>
+                </div>
+                <button id="settings-button" title="Configurações"><i class="fas fa-cog"></i></button>
+            </div>
+            <div class="messages" id="messagesContainer"></div>
+            <div class="preview-area" id="preview-area"><div id="preview-content"></div><button id="cancel-preview">&times;</button></div>
+            <div class="input-area">
+                <label for="fileInput" class="icon-button" id="file-picker-label"><i class="fas fa-paperclip"></i></label>
+                <input type="file" id="fileInput" style="display:none;">
+                <input type="text" id="messageInput" placeholder="Digite uma mensagem..."><button class="icon-button" id="sendButton"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="welcome-overlay"><div class="modal"><h2>Bem-vindo!</h2><p>Escolha um apelido para começar.</p><form id="nickname-form"><input type="text" id="nickname-input" class="modal-input" placeholder="Seu apelido aqui..." required><button type="submit" class="modal-button">Continuar</button></form></div></div>
+    <div class="overlay" id="settings-overlay"><div class="modal"><h2>Configurações</h2><p>Altere seu apelido ou limpe o histórico local.</p><input type="text" id="new-nickname-input" class="modal-input"><button class="modal-button" id="save-nickname-button">Salvar</button><button class="modal-button secondary" id="clear-chat-button">Limpar Chat Local</button></div></div>
+    <div class="image-viewer" id="image-viewer"><button class="close-viewer" id="close-viewer">&times;</button><img src="" id="viewer-image"></div>
+    <div id="toast-notification"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, serverTimestamp, query, orderByChild, startAt } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDit6JdJfEescgLC1TP6WKdXSt41j492m0",
+            authDomain: "mensagem4-46441.firebaseapp.com",
+            databaseURL: "https://mensagem4-46441-default-rtdb.firebaseio.com",
+            projectId: "mensagem4-46441",
+            storageBucket: "mensagem4-46441.appspot.com",
+            messagingSenderId: "14919682122",
+            appId: "1:14919682122:web:94cad28d680d1a7d033eb3",
+            measurementId: "G-RB6H9B31BV"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        
+        const groupsView = document.getElementById('groups-view');
+        const chatView = document.getElementById('chat-view');
+        const groupList = document.getElementById('group-list');
+        const createGroupBtn = document.getElementById('create-group-btn');
+        const groupModalOverlay = document.getElementById('group-modal-overlay');
+        const groupNameInput = document.getElementById('group-name-input');
+        const saveGroupBtn = document.getElementById('save-group-btn');
+        const cancelGroupBtn = document.getElementById('cancel-group-btn');
+        const fileLabel = document.getElementById('file-label');
+        const groupNameHeader = document.getElementById('group-name-header');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const filePickerLabel = document.getElementById('file-picker-label');
+        const welcomeOverlay = document.getElementById('welcome-overlay');
+        const nicknameForm = document.getElementById('nickname-form');
+        const nicknameInput = document.getElementById('nickname-input');
+        const settingsOverlay = document.getElementById('settings-overlay');
+        const settingsButton = document.getElementById('settings-button');
+        const saveNicknameButton = document.getElementById('save-nickname-button');
+        const newNicknameInput = document.getElementById('new-nickname-input');
+        const clearChatButton = document.getElementById('clear-chat-button');
+        const toast = document.getElementById('toast-notification');
+        const imageViewer = document.getElementById('image-viewer');
+        const viewerImage = document.getElementById('viewer-image');
+        const closeViewer = document.getElementById('close-viewer');
+        const previewArea = document.getElementById('preview-area');
+        const previewContent = document.getElementById('preview-content');
+        const cancelPreview = document.getElementById('cancel-preview');
+        const backButton = document.getElementById('back-button');
+
+        let userNickname = null;
+        let selectedFile = { dataUrl: null, name: null, type: null };
+        let groupCoverFile = { dataUrl: null, name: null };
+        let messagesListenerUnsubscribe = null;
+        let lastReceivedTimestamp = 0;
+        let currentGroupId = null;
+
+        const showToast = (message) => {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        };
+        
+        window.handleGroupCoverFile = (mimeType, fileName, base64Data) => {
+            if (mimeType.startsWith('image/')) {
+                const dataUrl = `data:${mimeType};base64,${base64Data}`;
+                groupCoverFile = { dataUrl: dataUrl, name: fileName };
+                fileLabel.innerHTML = `<img src="${dataUrl}" alt="Preview"><span>${fileName}</span>`;
+            } else { showToast("Por favor, selecione um arquivo de imagem."); }
+        };
+        
+        window.handleChatFile = (mimeType, fileName, base64Data) => {
+            const dataUrl = `data:${mimeType};base64,${base64Data}`;
+            selectedFile = { dataUrl: dataUrl, name: fileName, type: mimeType };
+            let previewHTML = mimeType.startsWith('image/') ? `<img src="${dataUrl}"><span>${fileName}</span>` : `<i class="fas fa-file-alt"></i><span>${fileName}</span>`;
+            previewContent.innerHTML = previewHTML;
+            previewArea.style.display = 'flex';
+        };
+
+        const updateNickOnJava = (nick) => {
+            if (window.javaBridge) window.javaBridge.updateMyNickname(nick);
+        };
+
+        const switchView = (viewId) => {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        };
+
+        const openChatForGroup = (groupId, groupName) => {
+            currentGroupId = groupId;
+            groupNameHeader.textContent = groupName;
+            setupFirebaseListener(groupId);
+            switchView('chat-view');
+        };
+        
+        window.handleBackButton = () => {
+            if (chatView.classList.contains('active')) {
+                if (messagesListenerUnsubscribe) messagesListenerUnsubscribe();
+                messagesListenerUnsubscribe = null;
+                currentGroupId = null;
+                switchView('groups-view');
+            } else {
+                if (window.javaBridge) window.javaBridge.closeApp();
+            }
+        };
+
+        const setupFirebaseListener = (groupId) => {
+            if (messagesListenerUnsubscribe) messagesListenerUnsubscribe();
+            
+            const clearTimestamp = parseInt(window.javaBridge.getClearTimestamp(groupId) || '0', 10);
+            const messagesRef = ref(database, `group_messages/${groupId}`);
+            const messagesQuery = query(messagesRef, orderByChild('timestamp'), startAt(clearTimestamp));
+
+            messagesListenerUnsubscribe = onValue(messagesQuery, (snapshot) => {
+                messagesContainer.innerHTML = '';
+                let latestTimestamp = 0;
+                let newMessages = [];
+
+                if (snapshot.exists()) {
+                    snapshot.forEach((childSnapshot) => {
+                        const messageData = childSnapshot.val();
+                        newMessages.push(messageData);
+                        if (messageData.timestamp > latestTimestamp) latestTimestamp = messageData.timestamp;
+                    });
+                }
+                
+                newMessages.forEach(displayMessage);
+
+                if (latestTimestamp > lastReceivedTimestamp && lastReceivedTimestamp > 0) {
+                     newMessages.forEach((msg) => {
+                         if (msg.timestamp > lastReceivedTimestamp) sendNotification(msg);
+                     });
+                }
+                lastReceivedTimestamp = latestTimestamp || lastReceivedTimestamp;
+
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            });
+        };
+
+        const sendMessage = () => {
+            const text = messageInput.value.trim();
+            if (text === '' && !selectedFile.dataUrl) return;
+
+            const messagesRef = ref(database, `group_messages/${currentGroupId}`);
+            const messageData = {
+                nickname: userNickname,
+                text: text,
+                file: selectedFile.dataUrl ? selectedFile : null,
+                timestamp: serverTimestamp()
+            };
+
+            push(messagesRef).set(messageData).then(() => {
+                messageInput.value = '';
+                selectedFile = { dataUrl: null, name: null, type: null };
+                previewArea.style.display = 'none';
+                messageInput.focus();
+            });
+        };
+
+        const sendNotification = (data) => {
+            if (window.javaBridge) window.javaBridge.onNewMessage(JSON.stringify(data));
+        };
+
+        const displayMessage = (data) => {
+            const el = document.createElement('div');
+            el.classList.add('message', data.nickname === userNickname ? 'sent' : 'received');
+
+            let contentHTML = '';
+            if (data.nickname !== userNickname) contentHTML += `<div class="message-author">${data.nickname}</div>`;
+            if (data.file) {
+                const { dataUrl, name, type } = data.file;
+                if (type.startsWith('image/')) contentHTML += `<img src="${dataUrl}" onclick="window.openImageViewer('${dataUrl}')">`;
+                else if (type.startsWith('audio/')) contentHTML += `<p>${name}</p><audio controls src="${dataUrl}"></audio>`;
+                else contentHTML += `<a href="${dataUrl}" download="${name}"><i class="fas fa-file-alt"></i><span>${name}</span></a>`;
+            }
+            if (data.text) contentHTML += `<p>${data.text}</p>`;
+            const timestamp = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' }) : '';
+            contentHTML += `<span class="timestamp">${timestamp}</span>`;
+            el.innerHTML = contentHTML;
+            messagesContainer.appendChild(el);
+        };
+        
+        const setupApp = () => {
+            userNickname = window.javaBridge.getMyNickname();
+            if (userNickname) {
+                welcomeOverlay.classList.remove('active');
+                updateNickOnJava(userNickname);
+            } else {
+                welcomeOverlay.classList.add('active');
+            }
+        };
+
+        const clearGroupChatHistory = (groupId, groupName) => {
+            if (confirm(`Limpar o histórico de mensagens do grupo "${groupName}"?`)) {
+                const timestamp = Date.now().toString();
+                if (window.javaBridge) window.javaBridge.saveClearTimestamp(groupId, timestamp);
+                showToast(`Histórico de "${groupName}" limpo.`);
+            }
+        };
+
+        const groupsRef = ref(database, 'groups');
+        onValue(groupsRef, (snapshot) => {
+            groupList.innerHTML = '';
+            if (snapshot.exists()) {
+                snapshot.forEach((childSnapshot) => {
+                    const groupId = childSnapshot.key;
+                    const groupData = childSnapshot.val();
+                    const item = document.createElement('div');
+                    item.className = 'group-item';
+                    item.innerHTML = `<div class="group-item-info"><img src="${groupData.coverImageDataUrl || 'https://via.placeholder.com/50'}"><span>${groupData.name}</span></div><button class="clear-btn" title="Limpar Histórico"><i class="fas fa-broom"></i></button>`;
+                    item.querySelector('.group-item-info').onclick = () => openChatForGroup(groupId, groupData.name);
+                    item.querySelector('.clear-btn').onclick = (e) => { e.stopPropagation(); clearGroupChatHistory(groupId, groupData.name); };
+                    groupList.appendChild(item);
+                });
+            }
+        });
+        
+        const resetGroupModal = () => {
+            groupNameInput.value = '';
+            groupCoverFile = { dataUrl: null, name: null };
+            fileLabel.innerHTML = '<span>Imagem de Capa (Opcional)</span>';
+            groupModalOverlay.classList.remove('active');
+            saveGroupBtn.disabled = false;
+            saveGroupBtn.textContent = "Criar Grupo";
+        };
+
+        createGroupBtn.onclick = () => groupModalOverlay.classList.add('active');
+        cancelGroupBtn.onclick = resetGroupModal;
+        groupModalOverlay.onclick = (e) => { if (e.target === groupModalOverlay) resetGroupModal(); };
+        fileLabel.onclick = () => { if (window.javaBridge) window.javaBridge.openFilePicker('handleGroupCoverFile'); };
+
+        saveGroupBtn.onclick = async () => {
+            const name = groupNameInput.value.trim();
+            if (!name) return alert("O nome do grupo é obrigatório.");
+            saveGroupBtn.disabled = true;
+            saveGroupBtn.textContent = "Criando...";
+            const newGroup = { name: name, coverImageDataUrl: groupCoverFile.dataUrl || '', createdAt: Date.now() };
+            try {
+                await push(groupsRef, newGroup);
+                resetGroupModal();
+            } catch (error) {
+                alert("Falha ao criar o grupo.");
+                resetGroupModal();
+            }
+        };
+        
+        nicknameForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nick = nicknameInput.value.trim();
+            if (nick) {
+                userNickname = nick;
+                updateNickOnJava(nick);
+                welcomeOverlay.classList.remove('active');
+            }
+        });
+
+        settingsButton.addEventListener('click', () => { newNicknameInput.value = userNickname; settingsOverlay.classList.add('active'); });
+        settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) settingsOverlay.classList.remove('active'); });
+        saveNicknameButton.addEventListener('click', () => {
+            const newNick = newNicknameInput.value.trim();
+            if (newNick && newNick !== userNickname) {
+                userNickname = newNick;
+                updateNickOnJava(newNick);
+                showToast('Apelido alterado!');
+                settingsOverlay.classList.remove('active');
+            }
+        });
+
+        clearChatButton.addEventListener('click', () => {
+            const timestamp = Date.now().toString();
+            if (window.javaBridge) window.javaBridge.saveClearTimestamp(currentGroupId, timestamp);
+            messagesContainer.innerHTML = '';
+            setupFirebaseListener(currentGroupId);
+            showToast('Chat local limpo!');
+            settingsOverlay.classList.remove('active');
+        });
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keydown', (e) => e.key === 'Enter' && sendMessage());
+        cancelPreview.addEventListener('click', () => { selectedFile = { dataUrl: null, name: null, type: null }; previewArea.style.display = 'none'; });
+        const openViewer = (src) => { viewerImage.src = src; imageViewer.classList.add('active'); };
+        window.openImageViewer = openViewer;
+        closeViewer.addEventListener('click', () => imageViewer.classList.remove('active'));
+        imageViewer.addEventListener('click', (e) => { if (e.target === imageViewer) imageViewer.classList.remove('active'); });
+        backButton.addEventListener('click', (e) => { e.preventDefault(); window.handleBackButton(); });
+
+        setupApp();
+    </script>
+</body>
+</html>
