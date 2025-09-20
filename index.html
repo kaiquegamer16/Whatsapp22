@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
+    <title>Chat App Web</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root{--header-bg:#075E54;--bg:#ECE5DD;--fab-bg:#25D366;--whatsapp-teal-green:#128C7E;--incoming-bubble-bg:#FFFFFF;--outgoing-bubble-bg:#DCF8C6;--font-family:'Roboto',sans-serif;--danger-color:#dc3545;}
+        :root{--header-bg:#075E54; --bg:#ECE5DD; --fab-bg:#25D366; --whatsapp-teal-green:#128C7E; --incoming-bubble-bg:#FFFFFF; --outgoing-bubble-bg:#DCF8C6; --font-family:'Roboto',sans-serif; --danger-color:#dc3545;}
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
         body{font-family:var(--font-family);background-color:var(--bg);display:flex;justify-content:center;align-items:center;height:100vh;}
         body::before{content:'';position:absolute;top:0;left:0;width:100%;height:128px;background-color:var(--header-bg);}
@@ -33,7 +33,7 @@
         .modal button.secondary{background-color:#aaa;margin-top:10px;}
         .file-label{display:block;padding:10px;border:1px dashed #ccc;border-radius:5px;text-align:center;cursor:pointer;margin-bottom:15px;}
         .file-label img{max-width:50px;max-height:50px;display:block;margin:5px auto;}
-        #group-image-input{display:none;}
+        .hidden-input{display:none;}
         .chat-container{position:relative;width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden;background-image:url(https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png);}
         #settings-button{background:0 0;border:none;color:#fff;font-size:1.3rem;cursor:pointer;}
         .messages{flex-grow:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;}
@@ -52,7 +52,6 @@
         .input-area{display:flex;align-items:center;padding:10px 15px;background-color:#F0F0F0;}
         #messageInput{flex-grow:1;border:1px solid #ccc;border-radius:20px;padding:10px 15px;font-size:1rem;margin:0 10px;}
         .icon-button{background:0 0;border:none;font-size:1.5rem;cursor:pointer;color:#555;padding:0 10px;}
-        #fileInput{display:none;}
         #toast-notification{position:fixed;bottom:-100px;left:50%;transform:translateX(-50%);background-color:#28a745;color:#fff;padding:10px 20px;border-radius:25px;font-size:.9rem;z-index:2000;transition:bottom .5s ease-in-out;}
         .image-viewer{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:1001;opacity:0;visibility:hidden;transition:opacity .3s ease;}
         .image-viewer.active{opacity:1;visibility:visible;}
@@ -79,7 +78,8 @@
             <div class="messages" id="messagesContainer"></div>
             <div class="preview-area" id="preview-area" style="display:none;"><div id="preview-content"></div><button id="cancel-preview">&times;</button></div>
             <div class="input-area">
-                <label for="fileInput" class="icon-button" id="file-picker-label"><i class="fas fa-paperclip"></i></label>
+                <label for="chat-file-input" class="icon-button" id="file-picker-label"><i class="fas fa-paperclip"></i></label>
+                <input type="file" id="chat-file-input" class="hidden-input">
                 <input type="text" id="messageInput" placeholder="Digite uma mensagem..."><button class="icon-button" id="sendButton"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
@@ -87,7 +87,7 @@
 
     <div class="overlay" id="welcome-overlay"><div class="modal"><h2>Bem-vindo!</h2><p>Escolha um apelido para começar.</p><form id="nickname-form"><input type="text" id="nickname-input" class="modal-input" placeholder="Seu apelido..." required><button type="submit" class="modal-button">Entrar</button></form></div></div>
     <div class="overlay" id="settings-overlay"><div class="modal"><h2>Configurações</h2><p>Altere seu apelido ou limpe o histórico local do chat.</p><input type="text" id="new-nickname-input" class="modal-input" placeholder="Novo apelido..."><button class="modal-button" id="save-nickname-button">Salvar</button><button class="modal-button secondary" id="clear-chat-button">Limpar Chat</button></div></div>
-    <div class="overlay" id="create-group-overlay"><div class="modal"><h2>Novo Grupo</h2><input type="text" id="group-name-input" class="modal-input" placeholder="Nome do Grupo" required><label class="file-label" id="file-label"><span>Imagem de Capa (Opcional)</span></label><button id="save-group-btn">Criar Grupo</button><button id="cancel-group-btn" class="secondary">Cancelar</button></div></div>
+    <div class="overlay" id="create-group-overlay"><div class="modal"><h2>Novo Grupo</h2><input type="text" id="group-name-input" class="modal-input" placeholder="Nome do Grupo" required><label for="group-image-input" class="file-label" id="file-label"><span>Imagem de Capa (Opcional)</span></label><input type="file" id="group-image-input" class="hidden-input"><button id="save-group-btn">Criar Grupo</button><button id="cancel-group-btn" class="secondary">Cancelar</button></div></div>
     <div class="image-viewer" id="image-viewer"><button class="close-viewer" id="close-viewer">&times;</button><img src="" alt="Visualização da Imagem" id="viewer-image"></div>
     <div id="toast-notification"></div>
 
@@ -118,12 +118,13 @@
         const saveGroupBtn = document.getElementById('save-group-btn');
         const cancelGroupBtn = document.getElementById('cancel-group-btn');
         const fileLabel = document.getElementById('file-label');
+        const groupImageInput = document.getElementById('group-image-input');
         const backButton = document.getElementById('back-button');
         const groupNameHeader = document.getElementById('group-name-header');
         const messagesContainer = document.getElementById('messagesContainer');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
-        const filePickerLabel = document.getElementById('file-picker-label');
+        const chatFileInput = document.getElementById('chat-file-input');
         const previewArea = document.getElementById('preview-area');
         const previewContent = document.getElementById('preview-content');
         const cancelPreview = document.getElementById('cancel-preview');
@@ -146,18 +147,23 @@
         let groupCoverFile = null;
         let chatFile = null;
         let lastTimestamps = {};
-        
+
+        const requestNotificationPermission = async () => {
+            if (!("Notification" in window)) return;
+            if (Notification.permission !== "denied") {
+                await Notification.requestPermission();
+            }
+        };
+
+        const showWebNotification = (title, body) => {
+            if (Notification.permission === "granted") {
+                new Notification(title, { body });
+            }
+        };
+
         const switchScreen = (screenToShow) => {
             document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             screenToShow.classList.remove('hidden');
-        };
-
-        window.handleBackButton = () => {
-            if (!chatScreen.classList.contains('hidden')) {
-                showGroupsScreen();
-            } else if (window.javaBridge) {
-                window.javaBridge.closeApp();
-            }
         };
 
         const showToast = (message) => {
@@ -165,27 +171,7 @@
             toast.style.bottom = '20px';
             setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
         };
-        
-        window.handleGroupCoverFile = (mimeType, fileName, base64Data) => {
-            if (mimeType.startsWith('image/')) {
-                const dataUrl = `data:${mimeType};base64,${base64Data}`;
-                groupCoverFile = { dataUrl, name: fileName, type: mimeType };
-                fileLabel.innerHTML = `<img src="${dataUrl}" alt="Preview"><span>${fileName}</span>`;
-            } else { showToast("Apenas imagens são permitidas."); }
-        };
 
-        window.handleChatFile = (mimeType, fileName, base64Data) => {
-            const dataUrl = `data:${mimeType};base64,${base64Data}`;
-            chatFile = { dataUrl, name: fileName, type: mimeType };
-            let previewHTML = mimeType.startsWith('image/') ? `<img src="${dataUrl}" alt="Preview"> <span>${fileName}</span>` : `<i class="fas fa-file-alt"></i> <span>${fileName}</span>`;
-            previewContent.innerHTML = previewHTML;
-            previewArea.style.display = 'flex';
-        };
-
-        const updateNickOnJava = (nick) => {
-            if (window.javaBridge) try { window.javaBridge.updateMyNickname(nick); } catch(e) {}
-        };
-        
         onValue(ref(database, 'groups'), (snapshot) => {
             groupList.innerHTML = '';
             if (snapshot.exists()) {
@@ -265,10 +251,16 @@
             contentHTML += `<span class="timestamp">${timestamp}</span>`;
             el.innerHTML = contentHTML;
             messagesContainer.appendChild(el);
+            el.querySelector('.chat-image')?.addEventListener('click', () => { viewerImage.src = data.file.dataUrl; imageViewer.classList.add('active'); });
         };
 
         const sendNotification = (data) => {
-            if (window.javaBridge) window.javaBridge.onNewMessage(JSON.stringify(data));
+            if (data.nickname === userNickname) return;
+            let body = data.text;
+            if (data.file) {
+                body = data.file.type.startsWith('image/') ? 'Enviou uma imagem' : 'Enviou um anexo';
+            }
+            showWebNotification(`Nova mensagem de ${data.nickname}`, body);
         };
 
         const sendMessage = () => {
@@ -284,6 +276,32 @@
                 cancelPreview.click();
             });
         };
+        
+        const fileReader = (file, callback) => {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64Data = reader.result.split(',')[1];
+                callback(file.type, file.name, `data:${file.type};base64,${base64Data}`);
+            };
+            reader.readAsDataURL(file);
+        };
+
+        groupImageInput.addEventListener('change', (e) => {
+            fileReader(e.target.files[0], (type, name, dataUrl) => {
+                groupCoverFile = { dataUrl, name, type };
+                fileLabel.innerHTML = `<img src="${dataUrl}" alt="Preview"><span>${name}</span>`;
+            });
+        });
+
+        chatFileInput.addEventListener('change', (e) => {
+            fileReader(e.target.files[0], (type, name, dataUrl) => {
+                chatFile = { dataUrl, name, type };
+                let previewHTML = type.startsWith('image/') ? `<img src="${dataUrl}" alt="Preview"> <span>${name}</span>` : `<i class="fas fa-file-alt"></i> <span>${name}</span>`;
+                previewContent.innerHTML = previewHTML;
+                previewArea.style.display = 'flex';
+            });
+        });
 
         const resetCreateGroupModal = () => {
             groupNameInput.value = '';
@@ -297,7 +315,6 @@
         createGroupBtn.onclick = () => createGroupOverlay.classList.add('active');
         cancelGroupBtn.onclick = resetCreateGroupModal;
         createGroupOverlay.onclick = (e) => { if (e.target === createGroupOverlay) resetCreateGroupModal(); };
-        fileLabel.onclick = () => window.javaBridge?.openFilePicker('handleGroupCoverFile');
 
         saveGroupBtn.onclick = async () => {
             const name = groupNameInput.value.trim();
@@ -318,8 +335,8 @@
             if (nick) {
                 userNickname = nick;
                 localStorage.setItem('userNickname', nick);
-                updateNickOnJava(nick);
                 welcomeOverlay.classList.remove('active');
+                requestNotificationPermission();
             }
         });
         
@@ -330,7 +347,6 @@
             if (newNick && newNick !== userNickname) {
                 userNickname = newNick;
                 localStorage.setItem('userNickname', newNick);
-                updateNickOnJava(newNick);
                 showToast('Apelido alterado!');
                 settingsOverlay.classList.remove('active');
             }
@@ -345,16 +361,13 @@
 
         sendButton.addEventListener('click', sendMessage);
         messageInput.addEventListener('keydown', (e) => e.key === 'Enter' && sendMessage());
-        filePickerLabel.addEventListener('click', () => window.javaBridge?.openFilePicker('handleChatFile'));
-        cancelPreview.addEventListener('click', () => { chatFile = null; previewArea.style.display = 'none'; });
+        cancelPreview.addEventListener('click', () => { chatFile = null; previewArea.style.display = 'none'; chatFileInput.value = ''; });
         backButton.onclick = showGroupsScreen;
-        messagesContainer.addEventListener('click', (e) => { if(e.target.classList.contains('chat-image')) { viewerImage.src = e.target.src; imageViewer.classList.add('active'); }});
         closeViewer.onclick = () => imageViewer.classList.remove('active');
         imageViewer.onclick = (e) => { if (e.target === imageViewer) imageViewer.classList.remove('active'); };
 
         if (localStorage.getItem('userNickname')) {
             userNickname = localStorage.getItem('userNickname');
-            updateNickOnJava(userNickname);
             welcomeOverlay.classList.remove('active');
         } else {
             welcomeOverlay.classList.add('active');
