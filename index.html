@@ -3,95 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
+    <title>Grupos de Chat</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root{--header-bg:#075E54; --bg:#ECE5DD; --fab-bg:#25D366; --whatsapp-teal-green:#128C7E; --incoming-bubble-bg:#FFFFFF; --outgoing-bubble-bg:#DCF8C6; --font-family:'Roboto',sans-serif; --danger-color:#dc3545;}
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
-        body{font-family:var(--font-family);background-color:var(--bg);display:flex;justify-content:center;align-items:center;height:100vh;}
-        body::before{content:'';position:absolute;top:0;left:0;width:100%;height:128px;background-color:var(--header-bg);}
-        .screen{position:absolute;inset:0;display:flex;flex-direction:column;opacity:1;visibility:visible;transition:opacity .3s ease, visibility .3s ease;z-index:10;}
-        .screen.hidden{opacity:0;visibility:hidden;z-index:1;}
-        .header{background-color:var(--header-bg);color:#fff;padding:15px;font-size:1.3rem;box-shadow:0 2px 5px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:space-between;}
-        .header-main{flex-grow:1;display:flex;align-items:center;}
-        .back-button{color:#fff;text-decoration:none;margin-right:15px;font-size:1.2rem;background:none;border:none;cursor:pointer;}
-        .group-list{flex-grow:1;overflow-y:auto;padding:10px 0;}
+        :root{--header-bg:#075E54; --bg:#ECE5DD; --fab-bg:#25D366; --font-family:'Roboto',sans-serif; --danger-color: #dc3545;}
+        body{font-family:var(--font-family);background-color:var(--bg);margin:0;}
+        .header{background-color:var(--header-bg);color:#fff;padding:15px;font-size:1.3rem;box-shadow:0 2px 5px rgba(0,0,0,0.2);}
+        .group-list{padding:10px 0;}
         .group-item{display:flex;align-items:center;padding:12px 15px;background-color:#fff;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background-color .2s;}
-        .group-item-info{flex-grow:1;display:flex;align-items:center;}
+        .group-item-info { flex-grow: 1; display: flex; align-items: center; }
         .group-item img{width:50px;height:50px;border-radius:50%;object-fit:cover;margin-right:15px;background-color:#ccc;}
         .group-item span{font-size:1.1rem;font-weight:500;}
-        .delete-btn{background:none;border:none;font-size:1.2rem;color:#aaa;cursor:pointer;padding:10px;}
-        .delete-btn:hover{color:var(--danger-color);}
-        .fab{position:absolute;bottom:25px;right:25px;width:56px;height:56px;background-color:var(--fab-bg);color:#fff;border-radius:50%;border:none;font-size:1.8rem;display:flex;justify-content:center;align-items:center;box-shadow:0 4px 8px rgba(0,0,0,0.2);cursor:pointer;}
-        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;justify-content:center;align-items:center;z-index:1000;opacity:0;visibility:hidden;}
+        .delete-btn { background: none; border: none; font-size: 1.2rem; color: #aaa; cursor: pointer; padding: 10px; }
+        .delete-btn:hover { color: var(--danger-color); }
+        .fab{position:fixed;bottom:25px;right:25px;width:56px;height:56px;background-color:var(--fab-bg);color:#fff;border-radius:50%;border:none;font-size:1.8rem;display:flex;justify-content:center;align-items:center;box-shadow:0 4px 8px rgba(0,0,0,0.2);cursor:pointer;}
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;justify-content:center;align-items:center;z-index:100;opacity:0;visibility:hidden;}
         .overlay.active{opacity:1;visibility:visible;}
         .modal{background:#fff;padding:25px;border-radius:8px;width:90%;max-width:400px;}
         .modal h2{margin:0 0 20px;}
         .modal input[type="text"]{width:calc(100% - 22px);padding:10px;margin-bottom:15px;border:1px solid #ccc;border-radius:5px;}
         .modal button{width:100%;padding:12px;border:none;border-radius:5px;color:#fff;background-color:var(--header-bg);font-size:1rem;cursor:pointer;}
         .modal button.secondary{background-color:#aaa;margin-top:10px;}
-        .file-label{display:block;padding:10px;border:1px dashed #ccc;border-radius:5px;text-align:center;cursor:pointer;margin-bottom:15px;}
-        .file-label img{max-width:50px;max-height:50px;display:block;margin:5px auto;}
-        .chat-container{position:relative;width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden;background-image:url(https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png);}
-        #settings-button{background:0 0;border:none;color:#fff;font-size:1.3rem;cursor:pointer;}
-        .messages{flex-grow:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;}
-        .message{padding:8px 12px;border-radius:8px;margin-bottom:12px;max-width:70%;word-wrap:break-word;box-shadow:0 1px 1px rgba(0,0,0,0.05);position:relative;}
-        .message-author{font-size:.8rem;font-weight:700;color:var(--whatsapp-teal-green);margin-bottom:4px;}
-        .message.sent{background-color:var(--outgoing-bubble-bg);align-self:flex-end;}
-        .message.received{background-color:var(--incoming-bubble-bg);align-self:flex-start;}
-        .message .timestamp{font-size:.7rem;color:#999;float:right;clear:both;margin-top:5px;margin-left:10px;}
-        .message p{margin:0;padding-right:50px;}
-        .message img{max-width:100%;border-radius:8px;margin-top:5px;cursor:pointer;display:block;}
-        .file-attachment{display:flex;align-items:center;background:#f0f0f0;padding:10px;border-radius:5px;margin-top:5px;text-decoration:none;color:#333;}
-        .preview-area{padding:10px 15px;background-color:#e9e9e9;display:flex;align-items:center;border-bottom:1px solid #ddd;}
-        #preview-content{display:flex;align-items:center;font-size:.9rem;color:#555;}
-        #preview-content img{width:40px;height:40px;object-fit:cover;border-radius:5px;margin-right:10px;}
-        #cancel-preview{margin-left:auto;background:0 0;border:none;font-size:1.2rem;cursor:pointer;color:#888;}
-        .input-area{display:flex;align-items:center;padding:10px 15px;background-color:#F0F0F0;}
-        #messageInput{flex-grow:1;border:1px solid #ccc;border-radius:20px;padding:10px 15px;font-size:1rem;margin:0 10px;}
-        .icon-button{background:0 0;border:none;font-size:1.5rem;cursor:pointer;color:#555;padding:0 10px;}
-        #toast-notification{position:fixed;bottom:-100px;left:50%;transform:translateX(-50%);background-color:#28a745;color:#fff;padding:10px 20px;border-radius:25px;font-size:.9rem;z-index:2000;transition:bottom .5s ease-in-out;}
-        .image-viewer{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:1001;opacity:0;visibility:hidden;transition:opacity .3s ease;}
-        .image-viewer.active{opacity:1;visibility:visible;}
-        .image-viewer img{max-width:90%;max-height:80%;object-fit:contain;border-radius:5px;box-shadow:0 0 25px rgba(0,0,0,0.5);}
-        .close-viewer{position:absolute;top:20px;right:30px;font-size:2rem;color:#fff;background:0 0;border:none;cursor:pointer;}
+        .file-label { display: block; padding: 10px; border: 1px dashed #ccc; border-radius: 5px; text-align: center; cursor: pointer; margin-bottom: 15px; }
+        .file-label img { max-width: 50px; max-height: 50px; display: block; margin: 5px auto; }
+        .hidden-input { display: none; }
     </style>
 </head>
 <body>
-    <div id="groups-screen" class="screen">
-        <div class="header">Grupos</div>
-        <div class="group-list" id="group-list"></div>
-        <button class="fab" id="create-group-btn" title="Criar Novo Grupo">+</button>
-    </div>
+    <div class="header">Grupos</div>
+    <div class="group-list" id="group-list"></div>
+    <button class="fab" id="create-group-btn" title="Criar Novo Grupo">+</button>
 
-    <div id="chat-screen" class="screen hidden">
-        <div class="header">
-            <div class="header-main">
-                <button id="back-button" class="back-button"><i class="fas fa-arrow-left"></i></button>
-                <span id="group-name-header"></span>
-            </div>
-            <button id="settings-button" title="Configurações"><i class="fas fa-cog"></i></button>
-        </div>
-        <div class="chat-container">
-            <div class="messages" id="messagesContainer"></div>
-            <div class="preview-area" id="preview-area" style="display:none;"><div id="preview-content"></div><button id="cancel-preview">&times;</button></div>
-            <div class="input-area">
-                <label class="icon-button" id="file-picker-label"><i class="fas fa-paperclip"></i></label>
-                <input type="text" id="messageInput" placeholder="Digite uma mensagem..."><button class="icon-button" id="sendButton"><i class="fas fa-paper-plane"></i></button>
-            </div>
+    <div class="overlay" id="modal-overlay">
+        <div class="modal">
+            <h2>Novo Grupo</h2>
+            <input type="text" id="group-name-input" placeholder="Nome do Grupo" required>
+            <label for="group-image-input" class="file-label" id="file-label"><span>Imagem de Capa (Opcional)</span></label>
+            <input type="file" id="group-image-input" class="hidden-input" accept="image/*">
+            <button id="save-group-btn">Criar Grupo</button>
+            <button id="cancel-group-btn" class="secondary">Cancelar</button>
         </div>
     </div>
-
-    <div class="overlay" id="welcome-overlay"><div class="modal"><h2>Bem-vindo!</h2><p>Escolha um apelido para começar.</p><form id="nickname-form"><input type="text" id="nickname-input" class="modal-input" placeholder="Seu apelido..." required><button type="submit" class="modal-button">Entrar</button></form></div></div>
-    <div class="overlay" id="settings-overlay"><div class="modal"><h2>Configurações</h2><p>Altere seu apelido ou limpe o histórico local do chat.</p><input type="text" id="new-nickname-input" class="modal-input" placeholder="Novo apelido..."><button class="modal-button" id="save-nickname-button">Salvar</button><button class="modal-button secondary" id="clear-chat-button">Limpar Chat</button></div></div>
-    <div class="overlay" id="create-group-overlay"><div class="modal"><h2>Novo Grupo</h2><input type="text" id="group-name-input" class="modal-input" placeholder="Nome do Grupo" required><label class="file-label" id="file-label"><span>Imagem de Capa (Opcional)</span></label><button id="save-group-btn">Criar Grupo</button><button id="cancel-group-btn" class="secondary">Cancelar</button></div></div>
-    <div class="image-viewer" id="image-viewer"><button class="close-viewer" id="close-viewer">&times;</button><img src="" alt="Visualização da Imagem" id="viewer-image"></div>
-    <div id="toast-notification"></div>
-
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, serverTimestamp, query, orderByChild, startAt, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, push, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDit6JdJfEescgLC1TP6WKdXSt41j492m0",
@@ -106,87 +63,32 @@
         
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
-        
-        const groupsScreen = document.getElementById('groups-screen');
-        const chatScreen = document.getElementById('chat-screen');
+        const groupsRef = ref(database, 'groups');
+
         const groupList = document.getElementById('group-list');
         const createGroupBtn = document.getElementById('create-group-btn');
-        const createGroupOverlay = document.getElementById('create-group-overlay');
+        const modalOverlay = document.getElementById('modal-overlay');
         const groupNameInput = document.getElementById('group-name-input');
         const saveGroupBtn = document.getElementById('save-group-btn');
         const cancelGroupBtn = document.getElementById('cancel-group-btn');
         const fileLabel = document.getElementById('file-label');
-        const backButton = document.getElementById('back-button');
-        const groupNameHeader = document.getElementById('group-name-header');
-        const messagesContainer = document.getElementById('messagesContainer');
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
-        const filePickerLabel = document.getElementById('file-picker-label');
-        const previewArea = document.getElementById('preview-area');
-        const previewContent = document.getElementById('preview-content');
-        const cancelPreview = document.getElementById('cancel-preview');
-        const settingsButton = document.getElementById('settings-button');
-        const settingsOverlay = document.getElementById('settings-overlay');
-        const newNicknameInput = document.getElementById('new-nickname-input');
-        const saveNicknameButton = document.getElementById('save-nickname-button');
-        const clearChatButton = document.getElementById('clear-chat-button');
-        const welcomeOverlay = document.getElementById('welcome-overlay');
-        const nicknameForm = document.getElementById('nickname-form');
-        const nicknameInput = document.getElementById('nickname-input');
-        const imageViewer = document.getElementById('image-viewer');
-        const viewerImage = document.getElementById('viewer-image');
-        const closeViewer = document.getElementById('close-viewer');
-        const toast = document.getElementById('toast-notification');
+        const groupImageInput = document.getElementById('group-image-input');
 
-        let userNickname = localStorage.getItem('userNickname') || null;
-        let activeGroupId = null;
-        let messagesListenerUnsubscribe = null;
         let groupCoverFile = null;
-        let chatFile = null;
-        let lastTimestamps = {};
-        
-        const switchScreen = (screenToShow) => {
-            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-            screenToShow.classList.remove('hidden');
+
+        const fileReaderAsDataURL = (file, callback) => {
+            const reader = new FileReader();
+            reader.onloadend = () => callback(file.type, file.name, reader.result);
+            reader.readAsDataURL(file);
         };
 
-        window.handleBackButton = () => {
-            if (!chatScreen.classList.contains('hidden')) {
-                showGroupsScreen();
-            } else if (window.javaBridge && window.javaBridge.closeApp) {
-                window.javaBridge.closeApp();
-            }
-        };
-
-        const showToast = (message) => {
-            toast.textContent = message;
-            toast.style.bottom = '20px';
-            setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
-        };
-        
         window.handleGroupCoverFile = (mimeType, fileName, base64Data) => {
-            if (mimeType.startsWith('image/')) {
-                const dataUrl = `data:${mimeType};base64,${base64Data}`;
-                groupCoverFile = { dataUrl, name: fileName, type: mimeType };
-                fileLabel.innerHTML = `<img src="${dataUrl}" alt="Preview"><span>${fileName}</span>`;
-            } else { showToast("Apenas imagens são permitidas."); }
-        };
-
-        window.handleChatFile = (mimeType, fileName, base64Data) => {
             const dataUrl = `data:${mimeType};base64,${base64Data}`;
-            chatFile = { dataUrl, name: fileName, type: mimeType };
-            let previewHTML = mimeType.startsWith('image/') ? `<img src="${dataUrl}" alt="Preview"> <span>${fileName}</span>` : `<i class="fas fa-file-alt"></i> <span>${fileName}</span>`;
-            previewContent.innerHTML = previewHTML;
-            previewArea.style.display = 'flex';
+            groupCoverFile = { dataUrl, name: fileName, type: mimeType };
+            fileLabel.innerHTML = `<img src="${dataUrl}" alt="Preview"><span>${fileName}</span>`;
         };
 
-        const updateNickOnJava = (nick) => {
-            if (window.javaBridge && window.javaBridge.updateMyNickname) {
-                try { window.javaBridge.updateMyNickname(nick); } catch(e) {}
-            }
-        };
-        
-        onValue(ref(database, 'groups'), (snapshot) => {
+        onValue(groupsRef, (snapshot) => {
             groupList.innerHTML = '';
             if (snapshot.exists()) {
                 snapshot.forEach((childSnapshot) => {
@@ -195,7 +97,15 @@
                     const item = document.createElement('div');
                     item.className = 'group-item';
                     item.innerHTML = `<div class="group-item-info"><img src="${groupData.coverImageDataUrl || 'https://via.placeholder.com/50'}"><span>${groupData.name}</span></div><button class="delete-btn" title="Apagar Grupo"><i class="fas fa-trash-alt"></i></button>`;
-                    item.querySelector('.group-item-info').onclick = () => showChatScreen(groupId, groupData.name);
+                    
+                    item.querySelector('.group-item-info').onclick = () => {
+                        if (window.javaBridge && window.javaBridge.openLocalChat) {
+                            window.javaBridge.openLocalChat(groupId, groupData.name);
+                        } else {
+                           alert("Use o aplicativo para entrar no chat.");
+                        }
+                    };
+
                     item.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); deleteGroup(groupId, groupData.name); };
                     groupList.appendChild(item);
                 });
@@ -207,161 +117,50 @@
                 await remove(ref(database, `groups/${groupId}`));
                 await remove(ref(database, `group_messages/${groupId}`));
                 localStorage.removeItem(`chatClearedTimestamp_${groupId}`);
-                showToast(`Grupo "${groupName}" apagado.`);
             }
         };
 
-        const showGroupsScreen = () => {
-            if (messagesListenerUnsubscribe) messagesListenerUnsubscribe();
-            messagesListenerUnsubscribe = null;
-            activeGroupId = null;
-            switchScreen(groupsScreen);
-        };
-        
-        const showChatScreen = (groupId, groupName) => {
-            activeGroupId = groupId;
-            groupNameHeader.textContent = groupName;
-            setupFirebaseListener(groupId);
-            switchScreen(chatScreen);
-        };
-
-        const setupFirebaseListener = (groupId) => {
-            if (messagesListenerUnsubscribe) messagesListenerUnsubscribe();
-            const clearTimestamp = parseInt(localStorage.getItem(`chatClearedTimestamp_${groupId}`) || '0', 10);
-            const messagesQuery = query(ref(database, `group_messages/${groupId}`), orderByChild('timestamp'), startAt(clearTimestamp));
-
-            messagesListenerUnsubscribe = onValue(messagesQuery, (snapshot) => {
-                messagesContainer.innerHTML = '';
-                let latestTimestamp = 0;
-                let newMessages = [];
-                if (snapshot.exists()) {
-                    snapshot.forEach(child => {
-                        const msg = child.val();
-                        newMessages.push(msg);
-                        if (msg.timestamp > latestTimestamp) latestTimestamp = msg.timestamp;
-                    });
-                }
-                newMessages.forEach(displayMessage);
-                const lastKnown = lastTimestamps[groupId] || 0;
-                if (latestTimestamp > lastKnown && lastKnown > 0) {
-                     newMessages.forEach(msg => { if (msg.timestamp > lastKnown) sendNotification(msg); });
-                }
-                lastTimestamps[groupId] = latestTimestamp || lastKnown;
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            });
-        };
-        
-        const displayMessage = (data) => {
-            const el = document.createElement('div');
-            el.classList.add('message', data.nickname === userNickname ? 'sent' : 'received');
-            let contentHTML = data.nickname !== userNickname ? `<div class="message-author">${data.nickname}</div>` : '';
-            if (data.file) {
-                const { dataUrl, name, type } = data.file;
-                if (type.startsWith('image/')) contentHTML += `<img src="${dataUrl}" alt="${name}" class="chat-image">`;
-                else contentHTML += `<a href="${dataUrl}" download="${name}" class="file-attachment"><i class="fas fa-file-alt"></i> <span>${name}</span></a>`;
-            }
-            if (data.text) contentHTML += `<p>${data.text}</p>`;
-            const timestamp = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-            contentHTML += `<span class="timestamp">${timestamp}</span>`;
-            el.innerHTML = contentHTML;
-            messagesContainer.appendChild(el);
-            const img = el.querySelector('.chat-image');
-            if(img) img.addEventListener('click', () => { viewerImage.src = data.file.dataUrl; imageViewer.classList.add('active'); });
-        };
-
-        const sendNotification = (data) => {
-            if (window.javaBridge && window.javaBridge.onNewMessage) {
-                window.javaBridge.onNewMessage(JSON.stringify(data));
-            }
-        };
-
-        const sendMessage = () => {
-            const text = messageInput.value.trim();
-            if (text === '' && !chatFile) return;
-            push(ref(database, `group_messages/${activeGroupId}`), {
-                nickname: userNickname,
-                text: text,
-                file: chatFile,
-                timestamp: serverTimestamp()
-            }).then(() => {
-                messageInput.value = '';
-                cancelPreview.click();
-            });
-        };
-
-        const resetCreateGroupModal = () => {
+        const resetModal = () => {
             groupNameInput.value = '';
             groupCoverFile = null;
+            groupImageInput.value = '';
             fileLabel.innerHTML = '<span>Imagem de Capa (Opcional)</span>';
-            createGroupOverlay.classList.remove('active');
+            modalOverlay.classList.remove('active');
             saveGroupBtn.disabled = false;
             saveGroupBtn.textContent = "Criar Grupo";
         };
 
-        createGroupBtn.onclick = () => createGroupOverlay.classList.add('active');
-        cancelGroupBtn.onclick = resetCreateGroupModal;
-        createGroupOverlay.onclick = (e) => { if (e.target === createGroupOverlay) resetCreateGroupModal(); };
-        fileLabel.onclick = () => window.javaBridge?.openFilePicker('handleGroupCoverFile');
+        createGroupBtn.onclick = () => modalOverlay.classList.add('active');
+        cancelGroupBtn.onclick = resetModal;
+        modalOverlay.onclick = (e) => { if (e.target === modalOverlay) resetModal(); };
+        
+        fileLabel.onclick = () => {
+            if (window.javaBridge) {
+                window.javaBridge.openFilePicker('handleGroupCoverFile');
+            } else {
+                groupImageInput.click();
+            }
+        };
+        
+        groupImageInput.addEventListener('change', (e) => {
+            fileReaderAsDataURL(e.target.files[0], (type, name, dataUrl) => {
+                groupCoverFile = { dataUrl, name, type };
+                fileLabel.innerHTML = `<img src="${dataUrl}" alt="Preview"><span>${name}</span>`;
+            });
+        });
 
         saveGroupBtn.onclick = async () => {
             const name = groupNameInput.value.trim();
             if (!name) return alert("O nome do grupo é obrigatório.");
             saveGroupBtn.disabled = true;
             saveGroupBtn.textContent = "Criando...";
-            await push(ref(database, 'groups'), {
+            await push(groupsRef, {
                 name: name,
                 coverImageDataUrl: groupCoverFile ? groupCoverFile.dataUrl : '',
                 createdAt: serverTimestamp()
             });
-            resetCreateGroupModal();
+            resetModal();
         };
-
-        nicknameForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const nick = nicknameInput.value.trim();
-            if (nick) {
-                userNickname = nick;
-                localStorage.setItem('userNickname', nick);
-                updateNickOnJava(nick);
-                welcomeOverlay.classList.remove('active');
-            }
-        });
-        
-        settingsButton.addEventListener('click', () => { newNicknameInput.value = userNickname; settingsOverlay.classList.add('active'); });
-        settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) settingsOverlay.classList.remove('active'); });
-        saveNicknameButton.addEventListener('click', () => {
-            const newNick = newNicknameInput.value.trim();
-            if (newNick && newNick !== userNickname) {
-                userNickname = newNick;
-                localStorage.setItem('userNickname', newNick);
-                updateNickOnJava(newNick);
-                showToast('Apelido alterado!');
-                settingsOverlay.classList.remove('active');
-            }
-        });
-
-        clearChatButton.addEventListener('click', () => {
-            localStorage.setItem(`chatClearedTimestamp_${activeGroupId}`, Date.now().toString());
-            setupFirebaseListener(activeGroupId);
-            showToast('Chat local limpo!');
-            settingsOverlay.classList.remove('active');
-        });
-
-        sendButton.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keydown', (e) => e.key === 'Enter' && sendMessage());
-        filePickerLabel.addEventListener('click', () => window.javaBridge?.openFilePicker('handleChatFile'));
-        cancelPreview.addEventListener('click', () => { chatFile = null; previewArea.style.display = 'none'; });
-        backButton.onclick = showGroupsScreen;
-        closeViewer.onclick = () => imageViewer.classList.remove('active');
-        imageViewer.onclick = (e) => { if (e.target === imageViewer) imageViewer.classList.remove('active'); };
-
-        if (localStorage.getItem('userNickname')) {
-            userNickname = localStorage.getItem('userNickname');
-            updateNickOnJava(userNickname);
-            welcomeOverlay.classList.remove('active');
-        } else {
-            welcomeOverlay.classList.add('active');
-        }
     </script>
 </body>
 </html>
