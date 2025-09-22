@@ -74,7 +74,7 @@
     </div>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, serverTimestamp, query, orderByChild, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, serverTimestamp, query, remove, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         const firebaseConfig={apiKey:"AIzaSyDit6JdJfEescgLC1TP6WKdXSt41j492m0",authDomain:"mensagem4-46441.firebaseapp.com",databaseURL:"https://mensagem4-46441-default-rtdb.firebaseio.com",projectId:"mensagem4-46441",storageBucket:"mensagem4-46441.appspot.com",messagingSenderId:"14919682122",appId:"1:14919682122:web:94cad28d680d1a7d033eb3",measurementId:"G-RB6H9B31BV"};
         const app=initializeApp(firebaseConfig);
         const database=getDatabase(app);
@@ -82,6 +82,8 @@
         let currentScreen='chatList';
         let selectedChat={key:null, type:null, creatorId:null};
         let currentUserId = window.Android?.getUserId() || null;
+        let currentUserNickname = window.Android?.getUserNickname() || null;
+        if(currentUserId && currentUserNickname){const userRef = ref(database, 'users/' + currentUserId); set(userRef, { nickname: currentUserNickname });}
         const navigateTo=(screenName)=>{document.getElementById(currentScreen).classList.add('hidden');document.getElementById(screenName).classList.remove('hidden');currentScreen=screenName;};
         el.fabNewChat.addEventListener('click',()=>navigateTo('contactListScreen'));
         el.newGroupButton.addEventListener('click',()=>navigateTo('newGroupScreen'));
@@ -89,15 +91,36 @@
         el.backArrows.forEach(arrow=>arrow.addEventListener('click',()=>{if(currentScreen==='newGroupScreen'||currentScreen==='contactListScreen')navigateTo('chatListScreen');}));
         document.querySelector('.group-photo-container').addEventListener('click',()=>el.photoUploadInput.click());
         el.photoUploadInput.addEventListener('change',(e)=>{const file=e.target.files[0];if(file){const reader=new FileReader();reader.onload=(e)=>{el.photoPreview.src=e.target.result;};reader.readAsDataURL(file);}});
-        el.createGroupFab.addEventListener('click',()=>{const groupName=el.groupNameInput.value.trim();if(!groupName)return;const userId=window.Android.getUserId();const userNickname=window.Android.getUserNickname();push(ref(database,'groups'),{name:groupName,photoURL:el.photoPreview.src||'',createdAt:serverTimestamp(),creatorId:userId,creatorNickname:userNickname,lastMessageTimestamp:serverTimestamp()}).then(()=>{el.groupNameInput.value='';el.photoPreview.src='';navigateTo('chatListScreen');});});
+        el.createGroupFab.addEventListener('click',()=>{const groupName=el.groupNameInput.value.trim();if(!groupName)return;push(ref(database,'groups'),{name:groupName,photoURL:el.photoPreview.src||'',createdAt:serverTimestamp(),creatorId:currentUserId,creatorNickname:currentUserNickname,lastMessageTimestamp:serverTimestamp()}).then(()=>{el.groupNameInput.value='';el.photoPreview.src='';navigateTo('chatListScreen');});});
         const deselectChat=()=>{const current=document.querySelector('.chat-item.selected');if(current)current.classList.remove('selected');selectedChat={key:null,type:null,creatorId:null};el.headerDefault.classList.remove('hidden');el.headerContextual.classList.add('hidden');el.fabNewChat.classList.remove('hidden');};
         const selectChat=(element,key,type,creatorId)=>{deselectChat();selectedChat={key:key,type:type,creatorId:creatorId};element.classList.add('selected');el.headerDefault.classList.add('hidden');el.headerContextual.classList.remove('hidden');el.fabNewChat.classList.add('hidden');if(type==='group'&&currentUserId===creatorId){el.deleteIcon.style.display='block';}else{el.deleteIcon.style.display='none';}};
         el.contextualBackArrow.addEventListener('click',deselectChat);
         el.deleteIcon.addEventListener('click',()=>el.confirmationModal.classList.remove('hidden'));
         el.cancelDeleteBtn.addEventListener('click',()=>el.confirmationModal.classList.add('hidden'));
         el.confirmDeleteBtn.addEventListener('click',()=>{if(selectedChat.key&&selectedChat.type==='group'){remove(ref(database,'groups/'+selectedChat.key));remove(ref(database,'transport/'+selectedChat.key));deselectChat();}el.confirmationModal.classList.add('hidden');});
-        const renderChats=(chats)=>{el.chatsContainer.innerHTML='';if(chats.length>0){chats.sort((a,b)=>(b.lastMessageTimestamp||0)-(a.lastMessageTimestamp||0));let chatsHtml='';chats.forEach(chat=>{let photoHtml,name,lastMessage;if(chat.type==='group'){photoHtml=chat.photoURL?`<img src="${chat.photoURL}" class="chat-avatar" style="object-fit:cover;"/>`:`<div class="chat-avatar"><i class="fas fa-users"></i></div>`;name=chat.name;lastMessage=`Criado por ${chat.creatorNickname||'Admin'}`;}else{const otherMemberId=Object.keys(chat.memberInfo).find(id=>id!==currentUserId);const otherMemberNickname=chat.memberInfo[otherMemberId];photoHtml=`<div class="chat-avatar"><i class="fas fa-user"></i></div>`;name=otherMemberNickname;lastMessage='Chat Privado';}chatsHtml+=`<li class="chat-item" data-key="${chat.key}" data-type="${chat.type}" data-creator="${chat.creatorId||''}">${photoHtml}<div class="chat-details"><div class="chat-name">${name}</div><div class="chat-last-message">${lastMessage}</div></div></li>`;});el.chatsContainer.innerHTML=chatsHtml;document.querySelectorAll('.chat-item').forEach(item=>{let pressTimer;const startPress=(e)=>{pressTimer=window.setTimeout(()=>{selectChat(item,item.dataset.key,item.dataset.type,item.dataset.creator);},500);};const cancelPress=()=>clearTimeout(pressTimer);item.addEventListener('mousedown',startPress);item.addEventListener('mouseup',cancelPress);item.addEventListener('mouseleave',cancelPress);item.addEventListener('touchstart',startPress,{passive:true});item.addEventListener('touchend',cancelPress);item.addEventListener('touchmove',cancelPress);item.addEventListener('click',()=>{if(!selectedChat.key){const key=item.dataset.key;const type=item.dataset.type;window.Android?.openChat(key,type);}});});}else{el.chatsContainer.innerHTML='<p class="empty-chat-message">Pressione + para iniciar uma conversa</p>';}};
+        const renderChats=(chats)=>{el.chatsContainer.innerHTML='';if(chats.length>0){chats.sort((a,b)=>(b.lastMessageTimestamp||0)-(a.lastMessageTimestamp||0));let chatsHtml='';chats.forEach(chat=>{let photoHtml,name,lastMessage;if(chat.type==='group'){photoHtml=chat.photoURL?`<img src="${chat.photoURL}" class="chat-avatar" style="object-fit:cover;"/>`:`<div class="chat-avatar"><i class="fas fa-users"></i></div>`;name=chat.name;lastMessage=`Criado por ${chat.creatorNickname||'Admin'}`;}else{const otherMemberId=Object.keys(chat.memberInfo).find(id=>id!==currentUserId);const otherMemberNickname=chat.memberInfo[otherId];photoHtml=`<div class="chat-avatar"><i class="fas fa-user"></i></div>`;name=otherMemberNickname;lastMessage='Chat Privado';}chatsHtml+=`<li class="chat-item" data-key="${chat.key}" data-type="${chat.type}" data-creator="${chat.creatorId||''}">${photoHtml}<div class="chat-details"><div class="chat-name">${name}</div><div class="chat-last-message">${lastMessage}</div></div></li>`;});el.chatsContainer.innerHTML=chatsHtml;document.querySelectorAll('.chat-item').forEach(item=>{let pressTimer;const startPress=()=>{pressTimer=window.setTimeout(()=>{selectChat(item,item.dataset.key,item.dataset.type,item.dataset.creator);},500);};const cancelPress=()=>clearTimeout(pressTimer);item.addEventListener('mousedown',startPress);item.addEventListener('mouseup',cancelPress);item.addEventListener('mouseleave',cancelPress);item.addEventListener('touchstart',startPress,{passive:true});item.addEventListener('touchend',cancelPress);item.addEventListener('touchmove',cancelPress);item.addEventListener('click',()=>{if(!selectedChat.key){const key=item.dataset.key;const type=item.dataset.type;window.Android?.openChat(key,type);}});});}else{el.chatsContainer.innerHTML='<p class="empty-chat-message">Pressione + para iniciar uma conversa</p>';}};
         function listenToAllChats(){const groupsRef=query(ref(database,'groups'));const privateChatsRef=query(ref(database,'privateChats'));let allChats={};onValue(groupsRef,(snapshot)=>{snapshot.forEach(child=>{allChats[child.key]={...child.val(),key:child.key,type:'group'};});renderChats(Object.values(allChats));});onValue(privateChatsRef,(snapshot)=>{snapshot.forEach(child=>{const chatData=child.val();if(chatData.memberInfo&&chatData.memberInfo[currentUserId]){allChats[child.key]={...chatData,key:child.key,type:'private'};}});renderChats(Object.values(allChats));});}
+        window.checkUserAndOpenChat = async (otherUserId) => {
+            const otherUserRef = ref(database, 'users/' + otherUserId);
+            const snapshot = await get(otherUserRef);
+            if(snapshot.exists()) {
+                const otherUserNickname = snapshot.val().nickname;
+                const ids = [currentUserId, otherUserId].sort();
+                const chatId = ids[0] + "_" + ids[1];
+                const chatRef = ref(database, 'privateChats/' + chatId);
+                const chatData = {
+                    memberInfo: {
+                        [currentUserId]: currentUserNickname,
+                        [otherUserId]: otherUserNickname
+                    },
+                    lastMessageTimestamp: serverTimestamp()
+                };
+                set(chatRef, chatData);
+                window.Android?.openChat(chatId, 'private');
+            } else {
+                window.Android?.onUserNotFound();
+            }
+        };
         listenToAllChats();
     </script>
 </body>
