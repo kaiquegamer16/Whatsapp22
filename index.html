@@ -39,6 +39,10 @@
         .form-content{padding:25px;display:flex;flex-direction:column;gap:20px;}
         .form-content input{background:transparent;border:none;border-bottom:2px solid var(--wa-green-accent);padding:10px 0;font-size:1.1rem;outline:none;color:var(--wa-dark-text-primary);}
         .form-content input::placeholder{color:var(--wa-dark-text-secondary);}
+        .create-group-form{padding:25px;display:flex;align-items:center;gap:20px;background-color:var(--wa-dark-header-bg);}
+        .group-photo-container{position:relative;cursor:pointer;}
+        #group-photo-preview{width:60px;height:60px;border-radius:50%;background-color:#667781;display:flex;justify-content:center;align-items:center;font-size:1.5rem;color:var(--wa-dark-text-primary);object-fit:cover;}
+        #group-photo-upload{display:none;}
         .modal-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.6);display:flex;justify-content:center;align-items:center;z-index:100;opacity:1;transition:opacity 0.2s ease-in-out;}
         .modal-overlay.hidden{opacity:0;pointer-events:none;}
         .modal-content{background-color:var(--wa-dark-header-bg);padding:24px;border-radius:4px;width:80%;max-width:320px;color:var(--wa-dark-text-primary);}
@@ -51,7 +55,10 @@
 <body>
     <div class="whatsapp-container">
         <div id="chat-list-screen" class="screen">
-            <div class="header-container"><div id="header-default" class="header"><div class="header-title"><h2>WhatsApp</h2></div><i id="my-id-btn" class="fas fa-id-card header-icon"></i><i class="fas fa-search header-icon"></i></div></div>
+            <div class="header-container">
+                <div id="header-default" class="header"><div class="header-title"><h2>WhatsApp</h2></div><i id="my-id-btn" class="fas fa-id-card header-icon"></i><i class="fas fa-search header-icon"></i></div>
+                <div id="header-contextual" class="header hidden"><i id="contextual-back-arrow" class="fas fa-arrow-left header-icon"></i><div class="header-title"><h2>1</h2></div><i id="delete-icon" class="fas fa-trash header-icon"></i></div>
+            </div>
             <div class="main-content"><ul id="groups-container" class="chat-list"></ul><div id="contacts-header" class="list-header hidden">Conversas</div><ul id="contacts-container" class="chat-list"></ul></div>
             <div id="fab-new-chat" class="fab"><i class="fas fa-plus"></i></div>
         </div>
@@ -61,7 +68,13 @@
         </div>
         <div id="new-group-screen" class="screen hidden">
             <div class="header"><i class="fas fa-arrow-left header-icon back-arrow"></i><div class="header-title"><h2>Novo grupo</h2></div></div>
-            <div class="form-content"><input type="text" id="group-name" placeholder="Nome do grupo"></div>
+            <div class="create-group-form">
+                <div class="group-photo-container">
+                    <img id="group-photo-preview" src=""><i id="group-photo-icon" class="fas fa-camera"></i>
+                    <input type="file" id="group-photo-upload" accept="image/*">
+                </div>
+                <input type="text" id="group-name" placeholder="Nome do grupo">
+            </div>
             <div id="create-group-fab" class="fab"><i class="fas fa-check"></i></div>
         </div>
         <div id="new-contact-screen" class="screen hidden">
@@ -70,28 +83,47 @@
             <div id="save-contact-fab" class="fab"><i class="fas fa-check"></i></div>
         </div>
         <div id="my-id-modal" class="modal-overlay hidden"><div class="modal-content"><h2>Seu ID de Usuário</h2><p id="my-id-text">Carregando...</p><div class="modal-actions"><button id="copy-id-btn">Copiar</button><button id="close-id-modal-btn">Fechar</button></div></div></div>
+        <div id="delete-group-modal" class="modal-overlay hidden"><div class="modal-content"><h2>Apagar este grupo?</h2><div class="modal-actions"><button id="cancel-delete-btn">Cancelar</button><button id="confirm-delete-btn">Apagar</button></div></div></div>
     </div>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, serverTimestamp, query, orderByChild } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, serverTimestamp, query, orderByChild, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         const firebaseConfig={apiKey:"AIzaSyDit6JdJfEescgLC1TP6WKdXSt41j492m0",authDomain:"mensagem4-46441.firebaseapp.com",databaseURL:"https://mensagem4-46441-default-rtdb.firebaseio.com",projectId:"mensagem4-46441",storageBucket:"mensagem4-46441.appspot.com",messagingSenderId:"14919682122",appId:"1:14919682122:web:94cad28d680d1a7d033eb3",measurementId:"G-RB6H9B31BV"};
         const app=initializeApp(firebaseConfig);
         const database=getDatabase(app);
         const screens={chatList:document.getElementById('chat-list-screen'),newConversation:document.getElementById('new-conversation-screen'),newGroup:document.getElementById('new-group-screen'),newContact:document.getElementById('new-contact-screen')};
-        let currentScreen='chatList';
+        let currentScreen='chatList', longPressActive=false;
+        let selectedGroup={key:null, element:null};
         const navigateTo=(screenName)=>{screens[currentScreen].classList.add('hidden');screens[screenName].classList.remove('hidden');currentScreen=screenName;};
         document.getElementById('fab-new-chat').addEventListener('click',()=>navigateTo('newConversation'));
         document.getElementById('new-group-btn').addEventListener('click',()=>navigateTo('newGroup'));
         document.getElementById('new-contact-btn').addEventListener('click',()=>navigateTo('newContact'));
         document.querySelectorAll('.back-arrow').forEach(arrow=>{arrow.addEventListener('click',()=>{if(currentScreen==='newGroup'||currentScreen==='newContact')navigateTo('newConversation');else if(currentScreen==='newConversation')navigateTo('chatList');});});
-        document.getElementById('create-group-fab').addEventListener('click',()=>{const groupName=document.getElementById('group-name').value.trim();if(!groupName)return;const userId=window.Android.getUserId();const userNickname=window.Android.getUserNickname();push(ref(database,'groups'),{name:groupName,createdAt:serverTimestamp(),creatorId:userId,creatorNickname:userNickname}).then(()=>{document.getElementById('group-name').value='';navigateTo('chatList');});});
-        document.getElementById('save-contact-fab').addEventListener('click',()=>{const nickname=document.getElementById('contact-nickname').value.trim();const id=document.getElementById('contact-id').value.trim();if(!nickname||!id)return;window.Android.saveContact(JSON.stringify({id,nickname}));document.getElementById('contact-nickname').value='';document.getElementById('contact-id').value='';navigateTo('chatList');});
+        const groupPhotoContainer=document.querySelector('.group-photo-container');
+        const groupPhotoUpload=document.getElementById('group-photo-upload');
+        const groupPhotoPreview=document.getElementById('group-photo-preview');
+        const groupPhotoIcon=document.getElementById('group-photo-icon');
+        groupPhotoContainer.addEventListener('click',()=>groupPhotoUpload.click());
+        groupPhotoUpload.addEventListener('change',()=>{const file=groupPhotoUpload.files[0];if(file){const reader=new FileReader();reader.onload=(e)=>{groupPhotoPreview.src=e.target.result;groupPhotoIcon.style.display='none';};reader.readAsDataURL(file);}});
+        document.getElementById('create-group-fab').addEventListener('click',()=>{const groupName=document.getElementById('group-name').value.trim();if(!groupName)return;const userId=window.Android.getUserId();const userNickname=window.Android.getUserNickname();const photoFile=groupPhotoUpload.files[0];if(photoFile){const reader=new FileReader();reader.onload=(e)=>{push(ref(database,'groups'),{name:groupName,photoURL:e.target.result,createdAt:serverTimestamp(),creatorId:userId,creatorNickname:userNickname});};reader.readAsDataURL(photoFile);}else{push(ref(database,'groups'),{name:groupName,photoURL:'',createdAt:serverTimestamp(),creatorId:userId,creatorNickname:userNickname});}navigateTo('chatList');});
+        document.getElementById('save-contact-fab').addEventListener('click',()=>{const nickname=document.getElementById('contact-nickname').value.trim();const id=document.getElementById('contact-id').value.trim();if(!nickname||!id)return;window.Android.saveContact(JSON.stringify({id,nickname}));navigateTo('chatList');});
+        const headerDefault=document.getElementById('header-default');
+        const headerContextual=document.getElementById('header-contextual');
+        const contextualBackArrow=document.getElementById('contextual-back-arrow');
+        const deleteIcon=document.getElementById('delete-icon');
+        const deleteGroupModal=document.getElementById('delete-group-modal');
+        const deselectGroup=()=>{if(selectedGroup.element)selectedGroup.element.classList.remove('selected');selectedGroup={key:null,element:null};headerDefault.classList.remove('hidden');headerContextual.classList.add('hidden');fabNewChat.classList.remove('hidden');};
+        const selectGroup=(element,key,creatorId)=>{deselectGroup();selectedGroup={key:key,element:element};element.classList.add('selected');headerDefault.classList.add('hidden');headerContextual.classList.remove('hidden');fabNewChat.classList.add('hidden');const currentUserId=window.Android.getUserId();deleteIcon.style.display=(currentUserId===creatorId)?'block':'none';};
+        contextualBackArrow.addEventListener('click',deselectGroup);
+        deleteIcon.addEventListener('click',()=>deleteGroupModal.classList.remove('hidden'));
+        document.getElementById('cancel-delete-btn').addEventListener('click',()=>deleteGroupModal.classList.add('hidden'));
+        document.getElementById('confirm-delete-btn').addEventListener('click',()=>{if(selectedGroup.key){remove(ref(database,'groups/'+selectedGroup.key));deselectGroup();}deleteGroupModal.classList.add('hidden');});
         const groupsContainer=document.getElementById('groups-container');
         const contactsContainer=document.getElementById('contacts-container');
         const contactsHeader=document.getElementById('contacts-header');
-        const renderChats=()=>{const groupsQuery=query(ref(database,'groups'),orderByChild('createdAt'));onValue(groupsQuery,(snapshot)=>{groupsContainer.innerHTML='';if(snapshot.exists()){snapshot.forEach((childSnapshot)=>{const group=childSnapshot.val();const groupKey=childSnapshot.key;const item=document.createElement('li');item.className='chat-item';item.dataset.key=groupKey;item.dataset.name=group.name;item.dataset.type='group';item.innerHTML=`<div class="chat-avatar is-group"><i class="fas fa-users"></i></div><div class="chat-details"><div class="chat-name">${group.name}</div><div class="chat-last-message">Criado por ${group.creatorNickname||'Admin'}</div></div>`;groupsContainer.prepend(item);});}renderContacts();});};
-        const renderContacts=()=>{contactsContainer.innerHTML='';const contactsJson=window.Android.getContacts();const contacts=JSON.parse(contactsJson);if(contacts.length>0){contactsHeader.classList.remove('hidden');contacts.forEach(contact=>{const item=document.createElement('li');item.className='chat-item';item.dataset.key=contact.id;item.dataset.name=contact.nickname;item.dataset.type='private';item.innerHTML=`<div class="chat-avatar"><i class="fas fa-user"></i></div><div class="chat-details"><div class="chat-name">${contact.nickname}</div><div class="chat-last-message">Conversa Privada</div></div>`;contactsContainer.appendChild(item);});}else{contactsHeader.classList.add('hidden');}addClickListenersToItems();};
-        const addClickListenersToItems=()=>{document.querySelectorAll('.chat-item').forEach(item=>{item.addEventListener('click',()=>{const chatInfo={id:item.dataset.key,name:item.dataset.name,type:item.dataset.type};if(window.Android?.openChat){window.Android.openChat(JSON.stringify(chatInfo));}});});};
+        const renderChats=()=>{const groupsQuery=query(ref(database,'groups'),orderByChild('createdAt'));onValue(groupsQuery,(snapshot)=>{groupsContainer.innerHTML='';if(snapshot.exists()){snapshot.forEach((childSnapshot)=>{const group=childSnapshot.val();const groupKey=childSnapshot.key;const item=document.createElement('li');item.className='chat-item';item.dataset.key=groupKey;item.dataset.name=group.name;item.dataset.type='group';item.dataset.creator=group.creatorId;item.innerHTML=`<img src="${group.photoURL||''}" class="chat-avatar ${group.photoURL?'':'is-group'}" onerror="this.innerHTML='<i class=\\'fas fa-users\\'></i>'; this.classList.add('is-group'); this.src='';"><div class="chat-details"><div class="chat-name">${group.name}</div><div class="chat-last-message">Criado por ${group.creatorNickname||'Admin'}</div></div>`;groupsContainer.prepend(item);});}renderContacts();});};
+        const renderContacts=()=>{contactsContainer.innerHTML='';const contactsJson=window.Android.getContacts();const contacts=JSON.parse(contactsJson);if(contacts.length>0){contactsHeader.classList.remove('hidden');contacts.forEach(contact=>{const item=document.createElement('li');item.className='chat-item';item.dataset.key=contact.id;item.dataset.name=contact.nickname;item.dataset.type='private';item.innerHTML=`<div class="chat-avatar"><i class="fas fa-user"></i></div><div class="chat-details"><div class="chat-name">${contact.nickname}</div><div class="chat-last-message">Conversa Privada</div></div>`;contactsContainer.appendChild(item);});}else{contactsHeader.classList.add('hidden');}addEventListenersToItems();};
+        const addEventListenersToItems=()=>{document.querySelectorAll('.chat-item').forEach(item=>{const key=item.dataset.key;const name=item.dataset.name;const type=item.dataset.type;const creatorId=item.dataset.creator;let pressTimer;const startPress=(e)=>{longPressActive=false;pressTimer=window.setTimeout(()=>{longPressActive=true;if(type==='group'){selectGroup(item,key,creatorId);}},500);};const cancelPress=()=>clearTimeout(pressTimer);item.addEventListener('mousedown',startPress);item.addEventListener('mouseup',cancelPress);item.addEventListener('touchstart',startPress,{passive:true});item.addEventListener('touchend',cancelPress);item.addEventListener('click',()=>{if(longPressActive){longPressActive=false;return;}if(selectedGroup.key){deselectGroup();return;}const chatInfo={id:key,name:name,type:type};if(window.Android?.openChat){window.Android.openChat(JSON.stringify(chatInfo));}});});};
         const idModal=document.getElementById('my-id-modal');
         document.getElementById('my-id-btn').addEventListener('click',()=>{const userId=window.Android.getUserId();document.getElementById('my-id-text').textContent=userId;idModal.classList.remove('hidden');});
         document.getElementById('close-id-modal-btn').addEventListener('click',()=>idModal.classList.add('hidden'));
