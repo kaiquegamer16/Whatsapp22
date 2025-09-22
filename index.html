@@ -3,125 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.0/css/all.min.css">
+    <title>Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root{--wa-dark-bg:#111B21;--wa-dark-header-bg:#202C33;--wa-dark-text-primary:#E9EDEF;--wa-dark-text-secondary:#8696A0;--wa-green-accent:#00A884;--wa-dark-selection:#2a3942;--font-family:'Roboto',sans-serif;}
-        html,body{height:100%;margin:0;padding:0;-webkit-user-select:none;-ms-user-select:none;user-select:none;}
+        :root{--wa-dark-bg:#111B21;--wa-dark-header-bg:#202C33;--wa-dark-text-primary:#E9EDEF;--wa-dark-text-secondary:#8696A0;--wa-green-accent:#00A884;--wa-dark-input-bg:#2a3942;--wa-chat-bg-color:#0b141a;--wa-chat-bg-img:none;--wa-outgoing-bubble-bg:#005c4b;--wa-incoming-bubble-bg:#202c33;--wa-dark-selection:#2a3942;--font-family:'Roboto',sans-serif;}
+        html,body{height:100%;margin:0;padding:0;user-select:none;-webkit-user-select:none;}
         body{font-family:var(--font-family);background-color:#0b141a;display:flex;justify-content:center;align-items:center;height:100vh;}
-        .whatsapp-container{width:100%;max-width:450px;height:100%;max-height:90vh;background-color:var(--wa-dark-bg);display:flex;flex-direction:column;box-shadow:0 5px 25px rgba(0,0,0,0.5);border-radius:8px;overflow:hidden;position:relative;}
-        .screen{display:flex;flex-direction:column;width:100%;height:100%;background-color:var(--wa-dark-bg);position:absolute;top:0;left:0;transition:transform 0.3s ease-in-out;}
-        .screen.hidden{transform:translateX(100%);}
-        #chat-list-screen{transform:translateX(0);}
+        .whatsapp-container{width:100%;max-width:450px;height:100%;max-height:90vh;background-color:var(--wa-chat-bg-color);background-image:var(--wa-chat-bg-img);background-size:cover;background-position:center;display:flex;flex-direction:column;box-shadow:0 5px 25px rgba(0,0,0,0.5);border-radius:8px;overflow:hidden;position:relative;}
         .header-container{position:relative;flex-shrink:0;z-index:10;}
-        .header{background-color:var(--wa-dark-header-bg);color:var(--wa-dark-text-primary);padding:15px;display:flex;align-items:center;gap:20px;box-shadow:0 2px 5px rgba(0,0,0,0.3);transition:opacity 0.2s;}
+        .header{background-color:var(--wa-dark-header-bg);color:var(--wa-dark-text-primary);padding:10px 15px;display:flex;align-items:center;gap:15px;box-shadow:0 2px 5px rgba(0,0,0,0.3);transition:opacity 0.2s;}
         .header.hidden{display:none;}
-        #header-contextual{position:absolute;top:0;left:0;width:100%;box-sizing:border-box;}
-        .header-icon{font-size:1.2rem;cursor:pointer;color:var(--wa-dark-text-secondary);}
-        .header-title{flex-grow:1;}
-        .header-title h2{margin:0;font-size:1.2rem;font-weight:500;}
-        .main-content{overflow-y:auto;flex-grow:1;}
-        .fab{position:absolute;bottom:25px;right:25px;width:60px;height:60px;background-color:var(--wa-green-accent);border-radius:50%;display:flex;justify-content:center;align-items:center;color:white;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 8px rgba(0,0,0,0.4);transition:transform 0.2s,opacity 0.2s;z-index:20;}
-        .fab.hidden{transform:scale(0);opacity:0;}
-        .chat-list,.action-list{list-style:none;padding:0;margin:0;}
-        .chat-item,.action-item{display:flex;align-items:center;padding:12px 15px;gap:20px;cursor:pointer;transition:background-color 0.2s;}
-        .chat-item.selected{background-color:var(--wa-dark-selection);}
-        .chat-avatar{width:48px;height:48px;border-radius:50%;object-fit:cover;background-color:#333;flex-shrink:0;display:flex;justify-content:center;align-items:center;font-size:1.5rem;color:var(--wa-dark-text-primary);}
-        .chat-details{flex-grow:1;overflow:hidden;padding-right:10px;}
-        .chat-name{color:var(--wa-dark-text-primary);font-size:1.1rem;}
-        .chat-last-message{color:var(--wa-dark-text-secondary);font-size:0.9rem;}
-        .empty-chat-message{text-align:center;color:var(--wa-dark-text-secondary);margin-top:50px;font-size:1rem;}
-        .action-icon{width:48px;height:48px;border-radius:50%;background-color:var(--wa-green-accent);color:white;display:flex;justify-content:center;align-items:center;font-size:1.2rem;}
-        .action-text{color:var(--wa-dark-text-primary);font-size:1.1rem;font-weight:500;}
-        .create-group-content{padding:25px;background-color:var(--wa-dark-header-bg);display:flex;align-items:center;gap:20px;}
-        .group-photo-container{position:relative;cursor:pointer;}
-        #photo-preview{width:70px;height:70px;border-radius:50%;background-color:#667781;object-fit:cover;}
-        .camera-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--wa-dark-text-primary);font-size:2rem;}
-        #photo-preview.has-image + .camera-icon{display:none;}
-        #photo-upload{display:none;}
-        .group-name-input{flex-grow:1;background:transparent;border:none;border-bottom:2px solid var(--wa-green-accent);padding:10px 0;font-size:1.1rem;outline:none;color:var(--wa-dark-text-primary);}
-        .modal-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.6);display:flex;justify-content:center;align-items:center;z-index:100;opacity:1;transition:opacity 0.2s ease-in-out;}
+        #header-contextual-message{position:absolute;top:0;left:0;width:100%;box-sizing:border-box;}
+        .header-icon{font-size:1.2rem;cursor:pointer;color:var(--wa-dark-text-primary);}
+        .chat-avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;background-color:#667781;display:flex;justify-content:center;align-items:center;font-size:1.3rem;}
+        .chat-info{flex-grow:1;overflow:hidden;}
+        .chat-info h2{margin:0;font-size:1.1rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .chat-area{flex-grow:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
+        .chat-footer{display:flex;flex-direction:column;background-color:var(--wa-dark-bg);}
+        .editing-indicator{width:100%;background-color:var(--wa-dark-input-bg);padding:8px 15px;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;color:var(--wa-dark-text-secondary);font-size:0.9rem;}
+        .editing-indicator.hidden{display:none;}
+        .footer-main{display:flex;align-items:center;padding:10px;gap:10px;}
+        #file-input{display:none;}
+        .footer-icon{color:var(--wa-dark-text-secondary);font-size:1.3rem;cursor:pointer;padding:8px;}
+        .message-input{flex-grow:1;background-color:var(--wa-dark-input-bg);border:none;border-radius:20px;padding:12px 15px;color:var(--wa-dark-text-primary);font-size:1rem;outline:none;}
+        .send-btn{width:45px;height:45px;border-radius:50%;background-color:var(--wa-green-accent);border:none;color:white;font-size:1.2rem;cursor:pointer;display:flex;justify-content:center;align-items:center;flex-shrink:0;}
+        .message-wrapper{display:flex;flex-direction:column;max-width:85%;}
+        .message-wrapper.outgoing{align-self:flex-end;}
+        .message-wrapper.incoming{align-self:flex-start;}
+        .sender-name{font-size:0.8rem;color:var(--wa-green-accent);margin-left:12px;margin-bottom:2px;font-weight:500;}
+        .message-bubble{padding:8px 12px;border-radius:8px;word-wrap:break-word;display:flex;flex-direction:column;box-shadow:0 1px 1px rgba(0,0,0,0.1);position:relative;transition:background-color 0.2s;}
+        .message-wrapper.outgoing .message-bubble{background-color:var(--wa-outgoing-bubble-bg);color:var(--wa-dark-text-primary);}
+        .message-wrapper.incoming .message-bubble{background-color:var(--wa-incoming-bubble-bg);color:var(--wa-dark-text-primary);}
+        .message-bubble.selected{background-color:var(--wa-dark-selection);}
+        .message-text{margin-bottom:4px;}
+        .message-time-wrapper{display:flex;align-items:center;gap:5px;align-self:flex-end;}
+        .edited-label{font-size:0.7rem;color:#a1c3b3;opacity:0.8;}
+        .message-time{font-size:0.7rem;color:#a1c3b3;}
+        .media-bubble{padding:5px;}
+        .media-bubble img,.media-bubble video{max-width:100%;border-radius:5px;cursor:pointer;}
+        .media-bubble audio{width:100%;}
+        .file-bubble a{text-decoration:none;color:inherit;display:flex;align-items:center;gap:10px;}
+        .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.6);display:flex;justify-content:center;align-items:center;z-index:1000;opacity:1;transition:opacity 0.2s ease-in-out;}
         .modal-overlay.hidden{opacity:0;pointer-events:none;}
-        .modal-content{background-color:var(--wa-dark-header-bg);padding:24px;border-radius:4px;width:80%;max-width:320px;}
+        .modal-content{background-color:var(--wa-dark-header-bg);padding:24px;border-radius:4px;width:80%;max-width:320px;color:var(--wa-dark-text-primary);}
         .modal-content h2{margin:0 0 16px 0;font-size:1.2rem;color:var(--wa-dark-text-primary);font-weight:500;}
         .modal-actions{display:flex;justify-content:flex-end;gap:20px;margin-top:24px;}
         .modal-actions button{background:none;border:none;color:var(--wa-green-accent);font-weight:700;font-size:0.9rem;cursor:pointer;padding:8px;text-transform:uppercase;}
+        #image-viewer-modal{background-color:rgba(0,0,0,0.85);position:fixed;}
+        #modal-image{max-width:90%;max-height:90%;object-fit:contain;}
+        #close-modal-btn{position:absolute;top:20px;right:30px;font-size:2.5rem;color:white;cursor:pointer;}
+        .dropdown-menu{position:absolute;top:60px;right:10px;background-color:var(--wa-dark-header-bg);border-radius:4px;box-shadow:0 2px 10px rgba(0,0,0,0.5);z-index:20;overflow:hidden;transition:transform 0.2s, opacity 0.2s;transform-origin:top right;transform:scale(0);opacity:0;}
+        .dropdown-menu.visible{transform:scale(1);opacity:1;}
+        .dropdown-item{padding:12px 20px;color:var(--wa-dark-text-primary);cursor:pointer;}
+        .dropdown-item:hover{background-color:var(--wa-dark-input-bg);}
+        #theme-settings-modal .modal-content,#nickname-modal .modal-content{display:flex;flex-direction:column;gap:15px;}
+        #theme-settings-modal label{display:flex;flex-direction:column;gap:5px;font-size:0.9rem;}
+        #theme-settings-modal input[type="color"]{width:100%;height:40px;border:none;padding:0;cursor:pointer;background:none;}
+        #theme-settings-modal button,#nickname-modal button{background-color:var(--wa-dark-input-bg);border:1px solid var(--wa-dark-bg);padding:10px;border-radius:4px;color:var(--wa-dark-text-primary);cursor:pointer;}
+        #nickname-input{background-color:var(--wa-dark-input-bg);border:1px solid var(--wa-dark-bg);padding:10px;border-radius:4px;color:var(--wa-dark-text-primary);font-size:1rem;}
+        #participants-list .participant-item{padding:12px 15px;cursor:pointer;border-bottom:1px solid var(--wa-dark-input-bg);}
+        #participants-list .participant-item:hover{background-color:var(--wa-dark-input-bg);}
+        #participants-list .participant-item.is-self{cursor:default;color:var(--wa-dark-text-secondary);}
+        #participants-list .participant-item:last-child{border-bottom:none;}
     </style>
 </head>
 <body>
     <div class="whatsapp-container">
-        <div id="chat-list-screen" class="screen">
-            <div class="header-container">
-                <div id="header-default" class="header"><div class="header-title"><h2>WhatsApp</h2></div><i id="delete-icon" class="fas fa-trash header-icon" style="display:none;"></i></div>
-                <div id="header-contextual" class="header hidden"><i id="contextual-back-arrow" class="fas fa-arrow-left header-icon"></i><div class="header-title"><h2>1</h2></div><i id="delete-icon-context" class="fas fa-trash header-icon"></i></div>
+        <div class="header-container">
+            <div id="header-default" class="header">
+                <i id="back-arrow" class="fas fa-arrow-left header-icon"></i>
+                <div id="chat-header-avatar" class="chat-avatar"><i class="fas fa-users"></i></div>
+                <img id="chat-header-photo" src="" alt="" class="chat-avatar" style="display: none;">
+                <div class="chat-info"><h2 id="chat-header-name">Carregando...</h2></div>
+                <i id="more-options-btn" class="fas fa-ellipsis-v header-icon"></i>
             </div>
-            <div class="main-content"><ul id="chats-container" class="chat-list"></ul></div>
-            <div id="fab-new-chat" class="fab"><i class="fas fa-plus"></i></div>
+            <div id="header-contextual-message" class="header hidden">
+                <i id="contextual-back-arrow-msg" class="fas fa-arrow-left header-icon"></i><div class="chat-info"></div><i id="edit-message-icon" class="fas fa-pencil header-icon"></i><i id="delete-message-icon" class="fas fa-trash header-icon"></i>
+            </div>
+            <div id="more-options-menu" class="dropdown-menu">
+                <div id="view-participants-btn" class="dropdown-item">Ver participantes</div>
+                <div id="change-nickname-btn" class="dropdown-item">Mudar Apelido</div>
+                <div id="change-theme-btn" class="dropdown-item">Mudar Tema</div>
+                <div id="clear-chat-btn" class="dropdown-item">Limpar conversa</div>
+            </div>
         </div>
-        <div id="contact-list-screen" class="screen hidden">
-            <div class="header"><i class="fas fa-arrow-left header-icon back-arrow"></i><div class="header-title"><h2>Nova conversa</h2></div></div>
-            <div class="main-content"><ul class="action-list"><li id="new-group-button" class="action-item"><div class="action-icon"><i class="fas fa-users"></i></div><span class="action-text">Novo grupo</span></li><li id="new-private-chat-button" class="action-item"><div class="action-icon"><i class="fas fa-user"></i></div><span class="action-text">Novo Chat Privado</span></li></ul></div>
+        <div id="chat-area" class="chat-area"></div>
+        <div class="chat-footer">
+            <div id="editing-indicator" class="editing-indicator hidden"><span>Editando mensagem</span><i id="cancel-edit-btn" class="fas fa-times"></i></div>
+            <div class="footer-main">
+                <input id="file-input" type="file"><i id="attach-file-btn" class="fas fa-paperclip footer-icon"></i><input id="message-input" type="text" class="message-input" placeholder="Mensagem"><button id="send-btn" class="send-btn"><i class="fas fa-paper-plane"></i></button>
+            </div>
         </div>
-        <div id="new-group-screen" class="screen hidden">
-            <div class="header"><i class="fas fa-arrow-left header-icon back-arrow"></i><div class="header-title"><h2>Novo grupo</h2></div></div>
-            <div class="create-group-content"><div class="group-photo-container"><input type="file" id="photo-upload" accept="image/*"><img id="photo-preview" src="" alt=""><i class="fas fa-camera camera-icon"></i></div><input type="text" id="group-name" class="group-name-input" placeholder="Nome do grupo"></div>
-            <div id="create-group-fab" class="fab"><i class="fas fa-check"></i></div>
-        </div>
-        <div id="confirmation-modal" class="modal-overlay hidden"><div class="modal-content"><h2>Apagar este chat?</h2><div class="modal-actions"><button id="cancel-delete-btn">Cancelar</button><button id="confirm-delete-btn">Apagar</button></div></div></div>
     </div>
+
+    <!-- Modals -->
+    <div id="nickname-modal" class="modal-overlay hidden"><div class="modal-content"><h2>Bem-vindo!</h2><p style="color:var(--wa-dark-text-secondary);font-size:0.9rem;">Digite seu apelido para começar:</p><input type="text" id="nickname-input" placeholder="Seu apelido"><div class="modal-actions" style="justify-content:center;"><button id="confirm-nickname-btn">Entrar</button></div></div></div>
+    <div id="participants-modal" class="modal-overlay hidden"><div class="modal-content" style="padding:0;"><h2 style="padding:24px 24px 16px 24px; margin:0; border-bottom:1px solid var(--wa-dark-input-bg);">Participantes</h2><div id="participants-list"></div><div class="modal-actions"><button id="close-participants-btn">Fechar</button></div></div></div>
+    <div id="image-viewer-modal" class="modal-overlay hidden"><span id="close-modal-btn">&times;</span><img id="modal-image" src=""></div>
+    <div id="delete-message-modal" class="modal-overlay hidden"><div class="modal-content"><h2>Apagar mensagem?</h2><div class="modal-actions"><button id="cancel-delete-msg-btn">Cancelar</button><button id="confirm-delete-msg-btn">Apagar</button></div></div></div>
+    <div id="clear-chat-modal" class="modal-overlay hidden"><div class="modal-content"><h2>Limpar esta conversa?</h2><p style="color:var(--wa-dark-text-secondary);font-size:0.9rem;">As mensagens serão removidas permanentemente.</p><div class="modal-actions"><button id="cancel-clear-chat-btn">Cancelar</button><button id="confirm-clear-chat-btn">Limpar</button></div></div></div>
+    <div id="theme-settings-modal" class="modal-overlay hidden"><div class="modal-content"><h2>Configurações de Tema</h2><label>Cor do seu balão:<input type="color" id="my-bubble-color"></label><label>Cor do balão dos outros:<input type="color" id="their-bubble-color"></label><label>Imagem de fundo:<button id="pick-bg-btn">Selecionar da Galeria</button></label><div class="modal-actions"><button id="cancel-theme-btn">Cancelar</button><button id="save-theme-btn">Salvar</button></div></div></div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, serverTimestamp, query, remove, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, get, push, onValue, query, remove, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         const firebaseConfig={apiKey:"AIzaSyDit6JdJfEescgLC1TP6WKdXSt41j492m0",authDomain:"mensagem4-46441.firebaseapp.com",databaseURL:"https://mensagem4-46441-default-rtdb.firebaseio.com",projectId:"mensagem4-46441",storageBucket:"mensagem4-46441.appspot.com",messagingSenderId:"14919682122",appId:"1:14919682122:web:94cad28d680d1a7d033eb3",measurementId:"G-RB6H9B31BV"};
         const app=initializeApp(firebaseConfig);
         const database=getDatabase(app);
-        const el={chatsContainer:document.getElementById('chats-container'),contactListScreen:document.getElementById('contact-list-screen'),newGroupScreen:document.getElementById('new-group-screen'),chatListScreen:document.getElementById('chat-list-screen'),fabNewChat:document.getElementById('fab-new-chat'),newGroupButton:document.getElementById('new-group-button'),newPrivateChatButton:document.getElementById('new-private-chat-button'),backArrows:document.querySelectorAll('.back-arrow'),photoPreview:document.getElementById('photo-preview'),photoUploadInput:document.getElementById('photo-upload'),groupNameInput:document.getElementById('group-name'),createGroupFab:document.getElementById('create-group-fab'),headerDefault:document.getElementById('header-default'),headerContextual:document.getElementById('header-contextual'),contextualBackArrow:document.getElementById('contextual-back-arrow'),deleteIcon:document.getElementById('delete-icon-context'),confirmationModal:document.getElementById('confirmation-modal'),cancelDeleteBtn:document.getElementById('cancel-delete-btn'),confirmDeleteBtn:document.getElementById('confirm-delete-btn'),};
-        let currentScreen='chatListScreen';
-        let selectedChat={key:null, type:null, creatorId:null};
-        let currentUserId = window.Android?.getUserId() || null;
-        let currentUserNickname = window.Android?.getUserNickname() || null;
-        if(currentUserId && currentUserNickname){const userRef = ref(database, 'users/' + currentUserId); set(userRef, { nickname: currentUserNickname });}
-        const navigateTo=(screenName)=>{document.getElementById(currentScreen).classList.add('hidden');document.getElementById(screenName).classList.remove('hidden');currentScreen=screenName;};
-        el.fabNewChat.addEventListener('click',()=>navigateTo('contactListScreen'));
-        el.newGroupButton.addEventListener('click',()=>navigateTo('newGroupScreen'));
-        el.newPrivateChatButton.addEventListener('click',()=>window.Android?.promptForPrivateChat());
-        el.backArrows.forEach(arrow=>arrow.addEventListener('click',()=>{if(currentScreen==='newGroupScreen'||currentScreen==='contactListScreen')navigateTo('chatListScreen');}));
-        document.querySelector('.group-photo-container').addEventListener('click',()=>el.photoUploadInput.click());
-        el.photoUploadInput.addEventListener('change',(e)=>{const file=e.target.files[0];if(file){const reader=new FileReader();reader.onload=(e)=>{el.photoPreview.src=e.target.result;};reader.readAsDataURL(file);}});
-        el.createGroupFab.addEventListener('click',()=>{const groupName=el.groupNameInput.value.trim();if(!groupName)return;push(ref(database,'groups'),{name:groupName,photoURL:el.photoPreview.src||'',createdAt:serverTimestamp(),creatorId:currentUserId,creatorNickname:currentUserNickname,lastMessageTimestamp:serverTimestamp()}).then(()=>{el.groupNameInput.value='';el.photoPreview.src='';navigateTo('chatListScreen');});});
-        const deselectChat=()=>{const current=document.querySelector('.chat-item.selected');if(current)current.classList.remove('selected');selectedChat={key:null,type:null,creatorId:null};el.headerDefault.classList.remove('hidden');el.headerContextual.classList.add('hidden');el.fabNewChat.classList.remove('hidden');};
-        const selectChat=(element,key,type,creatorId)=>{deselectChat();selectedChat={key:key,type:type,creatorId:creatorId};element.classList.add('selected');el.headerDefault.classList.add('hidden');el.headerContextual.classList.remove('hidden');el.fabNewChat.classList.add('hidden');if(type==='group'&&currentUserId===creatorId){el.deleteIcon.style.display='block';}else{el.deleteIcon.style.display='none';}};
-        el.contextualBackArrow.addEventListener('click',deselectChat);
-        el.deleteIcon.addEventListener('click',()=>el.confirmationModal.classList.remove('hidden'));
-        el.cancelDeleteBtn.addEventListener('click',()=>el.confirmationModal.classList.add('hidden'));
-        el.confirmDeleteBtn.addEventListener('click',()=>{if(selectedChat.key&&selectedChat.type==='group'){remove(ref(database,'groups/'+selectedChat.key));remove(ref(database,'transport/'+selectedChat.key));deselectChat();}el.confirmationModal.classList.add('hidden');});
-        const renderChats=(chats)=>{el.chatsContainer.innerHTML='';if(chats.length>0){chats.sort((a,b)=>(b.lastMessageTimestamp||0)-(a.lastMessageTimestamp||0));let chatsHtml='';chats.forEach(chat=>{let photoHtml,name,lastMessage;if(chat.type==='group'){photoHtml=chat.photoURL?`<img src="${chat.photoURL}" class="chat-avatar" style="object-fit:cover;"/>`:`<div class="chat-avatar"><i class="fas fa-users"></i></div>`;name=chat.name;lastMessage=`Criado por ${chat.creatorNickname||'Admin'}`;}else{const otherMemberId=Object.keys(chat.memberInfo).find(id=>id!==currentUserId);const otherMemberNickname=chat.memberInfo[otherMemberId];photoHtml=`<div class="chat-avatar"><i class="fas fa-user"></i></div>`;name=otherMemberNickname;lastMessage='Chat Privado';}chatsHtml+=`<li class="chat-item" data-key="${chat.key}" data-type="${chat.type}" data-creator="${chat.creatorId||''}">${photoHtml}<div class="chat-details"><div class="chat-name">${name}</div><div class="chat-last-message">${lastMessage}</div></div></li>`;});el.chatsContainer.innerHTML=chatsHtml;document.querySelectorAll('.chat-item').forEach(item=>{let pressTimer;const startPress=()=>{pressTimer=window.setTimeout(()=>{selectChat(item,item.dataset.key,item.dataset.type,item.dataset.creator);},500);};const cancelPress=()=>clearTimeout(pressTimer);item.addEventListener('mousedown',startPress);item.addEventListener('mouseup',cancelPress);item.addEventListener('mouseleave',cancelPress);item.addEventListener('touchstart',startPress,{passive:true});item.addEventListener('touchend',cancelPress);item.addEventListener('touchmove',cancelPress);item.addEventListener('click',()=>{if(!selectedChat.key){const key=item.dataset.key;const type=item.dataset.type;window.Android?.openChat(key,type);}});});}else{el.chatsContainer.innerHTML='<p class="empty-chat-message">Pressione + para iniciar uma conversa</p>';}};
-        function listenToAllChats(){const groupsRef=query(ref(database,'groups'));const privateChatsRef=query(ref(database,'privateChats'));let allChats={};onValue(groupsRef,(snapshot)=>{snapshot.forEach(child=>{allChats[child.key]={...child.val(),key:child.key,type:'group'};});renderChats(Object.values(allChats));});onValue(privateChatsRef,(snapshot)=>{snapshot.forEach(child=>{const chatData=child.val();if(chatData.memberInfo&&chatData.memberInfo[currentUserId]){allChats[child.key]={...chatData,key:child.key,type:'private'};}});renderChats(Object.values(allChats));});}
-        window.checkUserAndOpenChat = async (otherUserId) => {
-            const otherUserRef = ref(database, 'users/' + otherUserId);
-            const snapshot = await get(otherUserRef);
-            if(snapshot.exists()) {
-                const otherUserNickname = snapshot.val().nickname;
-                const ids = [currentUserId, otherUserId].sort();
-                const chatId = ids[0] + "_" + ids[1];
-                const chatRef = ref(database, 'privateChats/' + chatId);
-                const chatData = {
-                    memberInfo: {
-                        [currentUserId]: currentUserNickname,
-                        [otherUserId]: otherUserNickname
-                    },
-                    lastMessageTimestamp: serverTimestamp()
-                };
-                set(chatRef, chatData);
-                window.Android?.openChat(chatId, 'private');
+
+        // --- Element References ---
+        const el={backArrow:document.getElementById('back-arrow'),groupName:document.getElementById('chat-header-name'),groupAvatar:document.getElementById('chat-header-avatar'),groupPhoto:document.getElementById('chat-header-photo'),chatArea:document.getElementById('chat-area'),messageInput:document.getElementById('message-input'),sendBtn:document.getElementById('send-btn'),attachFileBtn:document.getElementById('attach-file-btn'),fileInput:document.getElementById('file-input'),imageViewerModal:document.getElementById('image-viewer-modal'),modalImage:document.getElementById('modal-image'),closeModalBtn:document.getElementById('close-modal-btn'),headerDefault:document.getElementById('header-default'),headerContextual:document.getElementById('header-contextual-message'),contextualBackArrowMsg:document.getElementById('contextual-back-arrow-msg'),deleteMessageIcon:document.getElementById('delete-message-icon'),editMessageIcon:document.getElementById('edit-message-icon'),deleteMessageModal:document.getElementById('delete-message-modal'),cancelDeleteMsgBtn:document.getElementById('cancel-delete-msg-btn'),confirmDeleteMsgBtn:document.getElementById('confirm-delete-msg-btn'),editingIndicator:document.getElementById('editing-indicator'),cancelEditBtn:document.getElementById('cancel-edit-btn'),moreOptionsBtn:document.getElementById('more-options-btn'),moreOptionsMenu:document.getElementById('more-options-menu'),clearChatBtn:document.getElementById('clear-chat-btn'),clearChatModal:document.getElementById('clear-chat-modal'),cancelClearChatBtn:document.getElementById('cancel-clear-chat-btn'),confirmClearChatBtn:document.getElementById('confirm-clear-chat-btn'),changeNicknameBtn:document.getElementById('change-nickname-btn'),changeThemeBtn:document.getElementById('change-theme-btn'),themeSettingsModal:document.getElementById('theme-settings-modal'),myBubbleColorInput:document.getElementById('my-bubble-color'),theirBubbleColorInput:document.getElementById('their-bubble-color'),pickBgBtn:document.getElementById('pick-bg-btn'),cancelThemeBtn:document.getElementById('cancel-theme-btn'),saveThemeBtn:document.getElementById('save-theme-btn'),nicknameModal:document.getElementById('nickname-modal'),nicknameInput:document.getElementById('nickname-input'),confirmNicknameBtn:document.getElementById('confirm-nickname-btn'),viewParticipantsBtn:document.getElementById('view-participants-btn'),participantsModal:document.getElementById('participants-modal'),participantsList:document.getElementById('participants-list'),closeParticipantsBtn:document.getElementById('close-participants-btn'),};
+        
+        // --- State Variables ---
+        let selectedMessage={key:null,element:null,type:null};
+        let editState={isEditing:false,key:null};
+        let longPressActive=false;
+        let isInitialLoad=true;
+        let groupInfo={name:'',creatorId:''};
+        
+        let groupId, userId, userNickname;
+
+        // --- Initialization ---
+        const initializeChat = async () => {
+            const urlParams=new URLSearchParams(window.location.search);
+            groupId=urlParams.get('id');
+
+            // Check for user info in URL, then localStorage
+            let userIdParam = urlParams.get('userId');
+            let nicknameParam = urlParams.get('nickname');
+
+            if (userIdParam && nicknameParam) {
+                userId = userIdParam;
+                userNickname = decodeURIComponent(nicknameParam);
+                localStorage.setItem('chat_userId', userId);
+                localStorage.setItem('chat_userNickname', userNickname);
             } else {
-                window.Android?.onUserNotFound();
+                userId = localStorage.getItem('chat_userId');
+                userNickname = localStorage.getItem('chat_userNickname');
+            }
+
+            if(!groupId) {
+                alert("ID do grupo não encontrado. Voltando...");
+                window.history.back();
+                return;
+            }
+
+            if (!userId || !userNickname) {
+                el.nicknameModal.classList.remove('hidden');
+                return;
+            }
+            
+            await loadGroupInfoAndMessages();
+        };
+
+        const setupUser = () => {
+            const nickname = el.nicknameInput.value.trim();
+            if (!nickname) {
+                alert("Por favor, insira um apelido.");
+                return;
+            }
+            userId = crypto.randomUUID();
+            userNickname = nickname;
+
+            localStorage.setItem('chat_userId', userId);
+            localStorage.setItem('chat_userNickname', userNickname);
+
+            el.nicknameModal.classList.add('hidden');
+            loadGroupInfoAndMessages();
+        };
+
+        const loadGroupInfoAndMessages = async () => {
+            const groupRef=ref(database,'groups/'+groupId);
+            
+            try {
+                const snapshot = await get(groupRef);
+                if(snapshot.exists()){
+                    const groupData=snapshot.val();
+                    groupInfo={name:groupData.name,creatorId:groupData.creatorId};
+                    el.groupName.textContent=groupInfo.name;
+                    if(groupData.photoURL){
+                        el.groupPhoto.src=groupData.photoURL;
+                        el.groupPhoto.style.display='flex';
+                        el.groupAvatar.style.display='none';
+                    }
+
+                    // Add user to the group members list if not already there
+                    const memberRef = ref(database, 'groups/' + groupId + '/members/' + userId);
+                    set(memberRef, userNickname);
+
+                    loadLocalMessages();
+                    listenForNewMessages();
+                } else {
+                    alert("Grupo não encontrado!");
+                    window.history.back();
+                }
+            } catch (error) {
+                console.error("Erro ao carregar dados do grupo:", error);
+                alert("Não foi possível carregar o chat.");
             }
         };
-        listenToAllChats();
+
+        const sendMessage=(messageData)=>{push(ref(database,'transport/'+groupId),messageData);renderMessage(messageData);el.chatArea.scrollTop=el.chatArea.scrollHeight;};
+        const handleSendMessage=()=>{const text=el.messageInput.value.trim();if(text==='')return;const message={type:'text',text:text,createdAt:Date.now(),senderId:userId,senderNickname:userNickname};sendMessage(message);el.messageInput.value='';el.messageInput.focus();};
+        const handleFileUpload=(e)=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=(loadEvent)=>{let type='file';if(file.type.startsWith('image/'))type='image';else if(file.type.startsWith('audio/'))type='audio';else if(file.type.startsWith('video/'))type='video';const message={type:type,fileName:file.name,fileSize:file.size,fileData:loadEvent.target.result,createdAt:Date.now(),senderId:userId,senderNickname:userNickname};sendMessage(message);};reader.readAsDataURL(file);el.fileInput.value='';};
+        const formatTimestamp=(ts)=>ts?new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';
+        const renderMessage=(message)=>{const wrapper=document.createElement('div');wrapper.classList.add('message-wrapper');const bubble=document.createElement('div');bubble.classList.add('message-bubble');let content='';if(message.senderId===userId){wrapper.classList.add('outgoing');}else{wrapper.classList.add('incoming');wrapper.innerHTML=`<div class="sender-name">${message.senderNickname||'Anônimo'}</div>`;}
+        switch(message.type){case'image':bubble.classList.add('media-bubble');content=`<img src="${message.fileData}" alt="${message.fileName}"><span class="message-time">${formatTimestamp(message.createdAt)}</span>`;break;case'audio':bubble.classList.add('media-bubble');content=`<audio controls src="${message.fileData}"></audio><span class="message-time">${formatTimestamp(message.createdAt)}</span>`;break;case'video':bubble.classList.add('media-bubble');content=`<video controls src="${message.fileData}"></video><span class="message-time">${formatTimestamp(message.createdAt)}</span>`;break;default:content=`<span class="message-text">${message.text}</span><div class="message-time-wrapper"><span class="message-time">${formatTimestamp(message.createdAt)}</span></div>`;}
+        bubble.innerHTML=content;wrapper.appendChild(bubble);el.chatArea.appendChild(wrapper);};
+        const loadLocalMessages=()=>{if(window.Android&&typeof window.Android.getInitialMessages==='function'){const messagesJson=window.Android.getInitialMessages(groupInfo.name);try{const messages=JSON.parse(messagesJson);messages.sort((a,b)=>a.createdAt-b.createdAt);messages.forEach(msg=>renderMessage(msg));el.chatArea.scrollTop=el.chatArea.scrollHeight;}catch(e){console.error("Error parsing local messages", e)}}};
+        const listenForNewMessages=()=>{const transportRef = ref(database,'transport/'+groupId);onValue(query(transportRef),(snapshot)=>{if(!isInitialLoad&&snapshot.exists()){snapshot.forEach((childSnapshot)=>{const message=childSnapshot.val();if(message.senderId!==userId){if(window.Android&&typeof window.Android.processIncomingMessage==='function'){window.Android.processIncomingMessage(JSON.stringify({...message,groupName:groupInfo.name}));}renderMessage(message);el.chatArea.scrollTop=el.chatArea.scrollHeight;}remove(childSnapshot.ref);});}}),isInitialLoad=false;};
+        const applyTheme=(theme)=>{document.documentElement.style.setProperty('--wa-outgoing-bubble-bg',theme.myBubble);document.documentElement.style.setProperty('--wa-incoming-bubble-bg',theme.theirBubble);if(theme.background&&theme.background!=='none'){document.documentElement.style.setProperty('--wa-chat-bg-img',`url('${theme.background}')`);}else{document.documentElement.style.setProperty('--wa-chat-bg-img','none');}};
+        if(window.Android&&typeof window.Android.getTheme==='function'){const themeJson=window.Android.getTheme();applyTheme(JSON.parse(themeJson));}
+        
+        // --- Show Participants Logic ---
+        const showParticipants = async () => {
+            const membersRef = ref(database, 'groups/' + groupId + '/members');
+            el.participantsList.innerHTML = 'Carregando...';
+            el.participantsModal.classList.remove('hidden');
+
+            try {
+                const snapshot = await get(membersRef);
+                if (snapshot.exists()) {
+                    el.participantsList.innerHTML = '';
+                    snapshot.forEach(childSnapshot => {
+                        const memberId = childSnapshot.key;
+                        const memberNickname = childSnapshot.val();
+
+                        const item = document.createElement('div');
+                        item.classList.add('participant-item');
+                        
+                        if (memberId === userId) {
+                            item.textContent = `${memberNickname} (Você)`;
+                            item.classList.add('is-self');
+                        } else {
+                            item.textContent = memberNickname;
+                            item.addEventListener('click', () => {
+                                el.participantsModal.classList.add('hidden');
+                                // This function should be implemented in your Android App's WebAppInterface
+                                if (window.Android && typeof window.Android.startPrivateChat === 'function') {
+                                    window.Android.startPrivateChat(memberId, memberNickname);
+                                } else {
+                                    alert(`Iniciando conversa privada com ${memberNickname} (ID: ${memberId})`);
+                                }
+                            });
+                        }
+                        el.participantsList.appendChild(item);
+                    });
+                } else {
+                    el.participantsList.innerHTML = 'Nenhum participante encontrado.';
+                }
+            } catch (error) {
+                console.error("Erro ao buscar participantes:", error);
+                el.participantsList.innerHTML = 'Erro ao carregar lista.';
+            }
+        };
+
+        // --- Event Listeners ---
+        el.backArrow.addEventListener('click',()=>{if(window.Android&&typeof window.Android.closeChatListener==='function'){window.Android.closeChatListener();}window.history.back();});
+        el.sendBtn.addEventListener('click',handleSendMessage);
+        el.messageInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSendMessage();}});
+        el.attachFileBtn.addEventListener('click',()=>el.fileInput.click());
+        el.fileInput.addEventListener('change',handleFileUpload);
+        el.closeModalBtn.addEventListener('click',()=>el.imageViewerModal.classList.add('hidden'));
+        el.moreOptionsBtn.addEventListener('click',(e)=>{e.stopPropagation();if(userId===groupInfo.creatorId){el.clearChatBtn.style.display='block';}else{el.clearChatBtn.style.display='none';}el.moreOptionsMenu.classList.toggle('visible');});
+        document.addEventListener('click',()=>el.moreOptionsMenu.classList.remove('visible'));
+        el.changeNicknameBtn.addEventListener('click',()=>{if(window.Android&&typeof window.Android.changeNickname==='function'){window.Android.changeNickname();}});
+        el.clearChatBtn.addEventListener('click',()=>{el.clearChatModal.classList.remove('hidden');el.moreOptionsMenu.classList.remove('visible');});
+        el.cancelClearChatBtn.addEventListener('click',()=>el.clearChatModal.classList.add('hidden'));
+        el.confirmClearChatBtn.addEventListener('click',()=>{if(window.Android&&typeof window.Android.clearChatHistory==='function'){window.Android.clearChatHistory(groupInfo.name);}el.clearChatModal.classList.add('hidden');});
+        el.changeThemeBtn.addEventListener('click',()=>{const themeJson=window.Android.getTheme();const theme=JSON.parse(themeJson);el.myBubbleColorInput.value=theme.myBubble;el.theirBubbleColorInput.value=theme.theirBubble;el.themeSettingsModal.classList.remove('hidden');});
+        el.pickBgBtn.addEventListener('click',()=>{if(window.Android&&typeof window.Android.changeBackground==='function'){window.Android.changeBackground();el.themeSettingsModal.classList.add('hidden');}});
+        el.cancelThemeBtn.addEventListener('click',()=>el.themeSettingsModal.classList.add('hidden'));
+        el.saveThemeBtn.addEventListener('click',()=>{const currentTheme=JSON.parse(window.Android.getTheme());const newTheme={myBubble:el.myBubbleColorInput.value,theirBubble:el.theirBubbleColorInput.value,background:currentTheme.background};if(window.Android&&typeof window.Android.saveTheme==='function'){window.Android.saveTheme(JSON.stringify(newTheme));}applyTheme(newTheme);el.themeSettingsModal.classList.add('hidden');});
+        
+        // New Listeners
+        el.confirmNicknameBtn.addEventListener('click', setupUser);
+        el.nicknameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') setupUser(); });
+        el.viewParticipantsBtn.addEventListener('click', () => { showParticipants(); el.moreOptionsMenu.classList.remove('visible'); });
+        el.closeParticipantsBtn.addEventListener('click', () => el.participantsModal.classList.add('hidden'));
+
+        // Start the application
+        initializeChat();
     </script>
 </body>
 </html>
