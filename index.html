@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsApp</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         :root{--wa-dark-bg:#111B21;--wa-dark-header-bg:#202C33;--wa-dark-text-primary:#E9EDEF;--wa-dark-text-secondary:#8696A0;--wa-green-accent:#00A884;--wa-dark-selection:#2a3942;--font-family:'Roboto',sans-serif;}
@@ -49,7 +49,7 @@
 <body>
     <div class="whatsapp-container">
         <div id="chat-list-screen" class="screen">
-            <div class="header-container"><div id="header-default" class="header"><div class="header-title"><h2>WhatsApp</h2></div><i id="my-id-btn" class="fas fa-id-card header-icon"></i><i class="fas fa-search header-icon"></i></div></div>
+            <div class="header-container"><div id="header-default" class="header"><div class="header-title"><h2>WhatsApp</h2></div><i class="fas fa-search header-icon"></i></div></div>
             <div class="main-content"><ul id="groups-container" class="chat-list"></ul><div id="contacts-header" class="list-header hidden">Conversas</div><ul id="contacts-container" class="chat-list"></ul></div>
             <div id="fab-new-chat" class="fab"><i class="fas fa-plus"></i></div>
         </div>
@@ -82,14 +82,13 @@
         document.getElementById('new-contact-btn').addEventListener('click',()=>navigateTo('newContact'));
         document.querySelectorAll('.back-arrow').forEach(arrow=>{arrow.addEventListener('click',()=>{if(currentScreen==='newGroup'||currentScreen==='newContact')navigateTo('newConversation');else if(currentScreen==='newConversation')navigateTo('chatList');});});
         document.getElementById('create-group-fab').addEventListener('click',()=>{const groupName=document.getElementById('group-name').value.trim();if(!groupName)return;const userId=window.Android.getUserId();const userNickname=window.Android.getUserNickname();push(ref(database,'groups'),{name:groupName,createdAt:serverTimestamp(),creatorId:userId,creatorNickname:userNickname}).then(()=>{document.getElementById('group-name').value='';navigateTo('chatList');});});
-        document.getElementById('save-contact-fab').addEventListener('click',()=>{const nickname=document.getElementById('contact-nickname').value.trim();const id=document.getElementById('contact-id').value.trim();if(!nickname||!id)return;window.Android.saveContact(JSON.stringify({id,nickname}));document.getElementById('contact-nickname').value='';document.getElementById('contact-id').value='';navigateTo('chatList');renderContacts();});
-        document.getElementById('my-id-btn').addEventListener('click', () => { if(window.Android?.showMyId) window.Android.showMyId(); });
+        document.getElementById('save-contact-fab').addEventListener('click',()=>{const nickname=document.getElementById('contact-nickname').value.trim();const id=document.getElementById('contact-id').value.trim();if(!nickname||!id)return;window.Android.saveContact(JSON.stringify({id,nickname}));document.getElementById('contact-nickname').value='';document.getElementById('contact-id').value='';navigateTo('chatList');});
         const groupsContainer=document.getElementById('groups-container');
         const contactsContainer=document.getElementById('contacts-container');
         const contactsHeader=document.getElementById('contacts-header');
         const renderChats=()=>{const groupsQuery=query(ref(database,'groups'),orderByChild('createdAt'));onValue(groupsQuery,(snapshot)=>{groupsContainer.innerHTML='';if(snapshot.exists()){snapshot.forEach((childSnapshot)=>{const group=childSnapshot.val();const groupKey=childSnapshot.key;const item=document.createElement('li');item.className='chat-item';item.dataset.key=groupKey;item.dataset.name=group.name;item.dataset.type='group';item.innerHTML=`<div class="chat-avatar is-group"><i class="fas fa-users"></i></div><div class="chat-details"><div class="chat-name">${group.name}</div><div class="chat-last-message">Criado por ${group.creatorNickname||'Admin'}</div></div>`;groupsContainer.prepend(item);});}renderContacts();});};
         const renderContacts=()=>{contactsContainer.innerHTML='';const contactsJson=window.Android.getContacts();const contacts=JSON.parse(contactsJson);if(contacts.length>0){contactsHeader.classList.remove('hidden');contacts.forEach(contact=>{const item=document.createElement('li');item.className='chat-item';item.dataset.key=contact.id;item.dataset.name=contact.nickname;item.dataset.type='private';item.innerHTML=`<div class="chat-avatar"><i class="fas fa-user"></i></div><div class="chat-details"><div class="chat-name">${contact.nickname}</div><div class="chat-last-message">Conversa Privada</div></div>`;contactsContainer.appendChild(item);});}else{contactsHeader.classList.add('hidden');}addClickListenersToItems();};
-        const addClickListenersToItems=()=>{document.querySelectorAll('.chat-item').forEach(item=>{item.addEventListener('click',()=>{const chatInfo={id:item.dataset.key,name:item.dataset.name,type:item.dataset.type};if(window.Android?.openChat){window.Android.openChat(JSON.stringify(chatInfo));}});});};
+        const addClickListenersToItems=()=>{document.querySelectorAll('.chat-item').forEach(item=>{item.addEventListener('click',()=>{const chatInfo={id:item.dataset.key,name:item.dataset.name,type:item.dataset.type};if(window.Android&&typeof window.Android.openChat==='function'){window.Android.openChat(JSON.stringify(chatInfo));}});});};
         renderChats();
     </script>
 </body>
