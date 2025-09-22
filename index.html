@@ -92,10 +92,6 @@
         const backArrows=document.querySelectorAll('.back-arrow');
         let currentScreen='chatList';
         let selectedGroup={key:null, creatorId:null};
-        let currentUserId=null;
-        if(window.Android && typeof window.Android.getUserId === 'function') {
-            currentUserId = window.Android.getUserId();
-        }
         const navigateTo=(screenName)=>{screens[currentScreen].classList.add('hidden');screens[screenName].classList.remove('hidden');currentScreen=screenName;};
         fabNewChat.addEventListener('click',()=>navigateTo('contactList'));
         newGroupButton.addEventListener('click',()=>navigateTo('newGroup'));
@@ -116,7 +112,7 @@
         const cancelDeleteBtn=document.getElementById('cancel-delete-btn');
         const confirmDeleteBtn=document.getElementById('confirm-delete-btn');
         const deselectGroup=()=>{const currentSelected=document.querySelector('.chat-item.selected');if(currentSelected)currentSelected.classList.remove('selected');selectedGroup={key:null,creatorId:null};headerDefault.classList.remove('hidden');headerContextual.classList.add('hidden');fabNewChat.classList.remove('hidden');};
-        const selectGroup=(element,key,creatorId)=>{if(selectedGroup.key===key)return;deselectGroup();selectedGroup={key:key,creatorId:creatorId};element.classList.add('selected');headerDefault.classList.add('hidden');headerContextual.classList.remove('hidden');fabNewChat.classList.add('hidden');if(currentUserId===creatorId){deleteIcon.style.display='block';}else{deleteIcon.style.display='none';}};
+        const selectGroup=(element,key,creatorId)=>{if(selectedGroup.key===key)return;deselectGroup();selectedGroup={key:key,creatorId:creatorId};element.classList.add('selected');headerDefault.classList.add('hidden');headerContextual.classList.remove('hidden');fabNewChat.classList.add('hidden');const currentUserId=(window.Android&&typeof window.Android.getUserId==='function')?window.Android.getUserId():null;if(currentUserId===creatorId){deleteIcon.style.display='block';}else{deleteIcon.style.display='none';}};
         contextualBackArrow.addEventListener('click',deselectGroup);
         deleteIcon.addEventListener('click',()=>{if(selectedGroup.key)confirmationModal.classList.remove('hidden');});
         cancelDeleteBtn.addEventListener('click',()=>confirmationModal.classList.add('hidden'));
