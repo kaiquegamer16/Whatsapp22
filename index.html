@@ -91,7 +91,11 @@
         const newGroupButton=document.getElementById('new-group-button');
         const backArrows=document.querySelectorAll('.back-arrow');
         let currentScreen='chatList';
-        let selectedGroupKey=null;
+        let selectedGroup={key:null, creatorId:null};
+        let currentUserId=null;
+        if(window.Android && typeof window.Android.getUserId === 'function') {
+            currentUserId = window.Android.getUserId();
+        }
         const navigateTo=(screenName)=>{screens[currentScreen].classList.add('hidden');screens[screenName].classList.remove('hidden');currentScreen=screenName;};
         fabNewChat.addEventListener('click',()=>navigateTo('contactList'));
         newGroupButton.addEventListener('click',()=>navigateTo('newGroup'));
@@ -103,7 +107,7 @@
         const createGroupFab=document.getElementById('create-group-fab');
         photoContainer.addEventListener('click',()=>photoUploadInput.click());
         photoUploadInput.addEventListener('change',(event)=>{const file=event.target.files[0];if(file){const reader=new FileReader();reader.onload=(e)=>{photoPreview.src=e.target.result;photoPreview.classList.add('has-image');};reader.readAsDataURL(file);}});
-        createGroupFab.addEventListener('click',()=>{const groupName=groupNameInput.value.trim();if(!groupName)return alert('Por favor, insira um nome para o grupo.');push(ref(database,'groups'),{name:groupName,photoURL:photoPreview.src||'',createdAt:serverTimestamp()}).then(()=>{groupNameInput.value='';photoPreview.src='';photoPreview.classList.remove('has-image');navigateTo('chatList');});});
+        createGroupFab.addEventListener('click',()=>{const groupName=groupNameInput.value.trim();if(!groupName)return alert('Por favor, insira um nome para o grupo.');const userId=window.Android.getUserId();const userNickname=window.Android.getUserNickname();push(ref(database,'groups'),{name:groupName,photoURL:photoPreview.src||'',createdAt:serverTimestamp(),creatorId:userId,creatorNickname:userNickname}).then(()=>{groupNameInput.value='';photoPreview.src='';photoPreview.classList.remove('has-image');navigateTo('chatList');});});
         const headerDefault=document.getElementById('header-default');
         const headerContextual=document.getElementById('header-contextual');
         const contextualBackArrow=document.getElementById('contextual-back-arrow');
@@ -111,16 +115,16 @@
         const confirmationModal=document.getElementById('confirmation-modal');
         const cancelDeleteBtn=document.getElementById('cancel-delete-btn');
         const confirmDeleteBtn=document.getElementById('confirm-delete-btn');
-        const deselectGroup=()=>{const currentSelected=document.querySelector('.chat-item.selected');if(currentSelected)currentSelected.classList.remove('selected');selectedGroupKey=null;headerDefault.classList.remove('hidden');headerContextual.classList.add('hidden');fabNewChat.classList.remove('hidden');};
-        const selectGroup=(element,key)=>{if(selectedGroupKey===key)return;deselectGroup();selectedGroupKey=key;element.classList.add('selected');headerDefault.classList.add('hidden');headerContextual.classList.remove('hidden');fabNewChat.classList.add('hidden');};
+        const deselectGroup=()=>{const currentSelected=document.querySelector('.chat-item.selected');if(currentSelected)currentSelected.classList.remove('selected');selectedGroup={key:null,creatorId:null};headerDefault.classList.remove('hidden');headerContextual.classList.add('hidden');fabNewChat.classList.remove('hidden');};
+        const selectGroup=(element,key,creatorId)=>{if(selectedGroup.key===key)return;deselectGroup();selectedGroup={key:key,creatorId:creatorId};element.classList.add('selected');headerDefault.classList.add('hidden');headerContextual.classList.remove('hidden');fabNewChat.classList.add('hidden');if(currentUserId===creatorId){deleteIcon.style.display='block';}else{deleteIcon.style.display='none';}};
         contextualBackArrow.addEventListener('click',deselectGroup);
-        deleteIcon.addEventListener('click',()=>{if(selectedGroupKey)confirmationModal.classList.remove('hidden');});
+        deleteIcon.addEventListener('click',()=>{if(selectedGroup.key)confirmationModal.classList.remove('hidden');});
         cancelDeleteBtn.addEventListener('click',()=>confirmationModal.classList.add('hidden'));
         confirmationModal.addEventListener('click',(e)=>{if(e.target===confirmationModal)confirmationModal.classList.add('hidden');});
-        confirmDeleteBtn.addEventListener('click',()=>{if(selectedGroupKey){remove(ref(database,'groups/'+selectedGroupKey));deselectGroup();}confirmationModal.classList.add('hidden');});
+        confirmDeleteBtn.addEventListener('click',()=>{if(selectedGroup.key){remove(ref(database,'groups/'+selectedGroup.key));deselectGroup();}confirmationModal.classList.add('hidden');});
         const groupsContainer=document.getElementById('groups-container');
         const groupsQuery=query(ref(database,'groups'),orderByChild('createdAt'));
-        onValue(groupsQuery,(snapshot)=>{groupsContainer.innerHTML='';if(snapshot.exists()){let groupsHtml='';snapshot.forEach((childSnapshot)=>{const group=childSnapshot.val();const groupKey=childSnapshot.key;const photoElement=group.photoURL?`<img src="${group.photoURL}" alt="Avatar" class="chat-avatar">`:`<div class="chat-avatar is-group"><i class="fas fa-users"></i></div>`;groupsHtml=`<li class="chat-item" data-key="${groupKey}">${photoElement}<div class="chat-details"><div class="chat-name">${group.name}</div><div class="chat-last-message">Grupo criado</div></div></li>`+groupsHtml;});groupsContainer.innerHTML=groupsHtml;document.querySelectorAll('.chat-item').forEach(item=>{let pressTimer;const startPress=(e)=>{if(e.type==='mousedown'&&e.button!==0)return;pressTimer=window.setTimeout(()=>{selectGroup(item,item.getAttribute('data-key'));},500);};const cancelPress=()=>clearTimeout(pressTimer);item.addEventListener('mousedown',startPress);item.addEventListener('mouseup',cancelPress);item.addEventListener('mouseleave',cancelPress);item.addEventListener('touchstart',startPress,{passive:true});item.addEventListener('touchend',cancelPress);item.addEventListener('touchmove',cancelPress);item.addEventListener('click',()=>{if(!selectedGroupKey){const key=item.getAttribute('data-key');if(window.Android&&typeof window.Android.openChat==='function'){window.Android.openChat(key);}else{window.location.href=`chat.html?id=${key}`;}}});});}else{groupsContainer.innerHTML='<p class="empty-chat-message">Pressione + para criar um grupo</p>';deselectGroup();}});
+        onValue(groupsQuery,(snapshot)=>{groupsContainer.innerHTML='';if(snapshot.exists()){let groupsHtml='';snapshot.forEach((childSnapshot)=>{const group=childSnapshot.val();const groupKey=childSnapshot.key;const photoElement=group.photoURL?`<img src="${group.photoURL}" alt="Avatar" class="chat-avatar">`:`<div class="chat-avatar is-group"><i class="fas fa-users"></i></div>`;groupsHtml=`<li class="chat-item" data-key="${groupKey}" data-creator="${group.creatorId}">${photoElement}<div class="chat-details"><div class="chat-name">${group.name}</div><div class="chat-last-message">Criado por ${group.creatorNickname||'Admin'}</div></div></li>`+groupsHtml;});groupsContainer.innerHTML=groupsHtml;document.querySelectorAll('.chat-item').forEach(item=>{let pressTimer;const startPress=(e)=>{if(e.type==='mousedown'&&e.button!==0)return;pressTimer=window.setTimeout(()=>{selectGroup(item,item.dataset.key,item.dataset.creator);},500);};const cancelPress=()=>clearTimeout(pressTimer);item.addEventListener('mousedown',startPress);item.addEventListener('mouseup',cancelPress);item.addEventListener('mouseleave',cancelPress);item.addEventListener('touchstart',startPress,{passive:true});item.addEventListener('touchend',cancelPress);item.addEventListener('touchmove',cancelPress);item.addEventListener('click',()=>{if(!selectedGroup.key){const key=item.getAttribute('data-key');if(window.Android&&typeof window.Android.openChat==='function'){window.Android.openChat(key);}else{window.location.href=`chat.html?id=${key}`;}}});});}else{groupsContainer.innerHTML='<p class="empty-chat-message">Pressione + para criar um grupo</p>';deselectGroup();}});
     </script>
 </body>
 </html>
